@@ -1,5 +1,6 @@
 // Données extraites du Road Book "TIMING R26.pdf"
 // 52e Rallye Aveyron Rouergue Occitanie — 10 & 11 juillet 2026
+import { mapCamera } from "../theme";
 
 export const RALLY_NAME = "52e Rallye Aveyron Rouergue Occitanie";
 export const STAGE_1_DATE = "Vendredi 10 juillet 2026";
@@ -540,6 +541,16 @@ export const getStageTotalKm = (stage: 1 | 2) =>
 
 export const getSegmentById = (id: string) =>
   SEGMENTS.find((s) => s.id === id);
+
+export const computeSegmentDurationSeconds = (segment: Segment): number => {
+  const speedKmh =
+    segment.type === "ES"
+      ? mapCamera.cameraSpeed.es
+      : mapCamera.cameraSpeed.liaison;
+  const distanceKm = Math.max(0, segment.distanceKm);
+  const activeSeconds = speedKmh > 0 ? (distanceKm / speedKmh) * 3600 : 0;
+  return mapCamera.progress.holdSeconds * 2 + activeSeconds;
+};
 
 export const SECTIONS = [
   { number: 1, stage: 1 as const, name: "Boucle Espalion (matin 1)" },

@@ -65,8 +65,11 @@ export const mapCamera = {
     bearingHalfLifeSeconds: 2.2,
   },
   progress: {
-    holdMaxFrames: 90,
-    holdDurationRatio: 0.08,
+    holdSeconds: 3,
+  },
+  cameraSpeed: {
+    es: 2500,
+    liaison: 4500,
   },
   renderTimeouts: {
     loadMapMs: 90000,

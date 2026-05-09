@@ -18,7 +18,11 @@ import {
 } from "@remotion/renderer";
 import path from "node:path";
 import fs from "node:fs";
-import { SEGMENTS, type Segment } from "../src/data/segments";
+import {
+  SEGMENTS,
+  computeSegmentDurationSeconds,
+  type Segment,
+} from "../src/data/segments";
 
 const ROOT = path.resolve(__dirname, "..");
 const OUT_DIR = path.join(ROOT, "out");
@@ -30,14 +34,14 @@ if (fs.existsSync(ENV_FILE)) {
 }
 
 type Args = {
-  duration: number;
+  duration: number | null;
   only: string[] | null;
   overlayOnly: boolean;
 };
 
 const parseArgs = (): Args => {
   const args = process.argv.slice(2);
-  let duration = 30;
+  let duration: number | null = null;
   let only: string[] | null = null;
   let overlayOnly = false;
   for (let i = 0; i < args.length; i++) {
@@ -119,7 +123,10 @@ const main = async () => {
 
   for (let i = 0; i < targets.length; i++) {
     const seg = targets[i];
-    const segmentDuration = customDurations[seg.id] ?? defaultDuration;
+    const segmentDuration =
+      customDurations[seg.id] ??
+      defaultDuration ??
+      computeSegmentDurationSeconds(seg);
 
     console.log(
       `[${i + 1}/${targets.length}] ${seg.id} — ${seg.title} (${segmentDuration}s)`

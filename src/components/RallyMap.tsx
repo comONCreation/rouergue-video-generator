@@ -101,12 +101,14 @@ const getDisplayWaypoints = (
   });
 };
 
-const getProgress = (frame: number, durationInFrames: number) => {
-  const holdFrames = Math.round(
-    Math.min(
-      mapCamera.progress.holdMaxFrames,
-      durationInFrames * mapCamera.progress.holdDurationRatio
-    )
+const getProgress = (
+  frame: number,
+  durationInFrames: number,
+  fps: number
+) => {
+  const holdFrames = Math.min(
+    Math.round(mapCamera.progress.holdSeconds * fps),
+    Math.floor(Math.max(0, durationInFrames - 1) / 2)
   );
   const activeFrames = Math.max(1, durationInFrames - holdFrames * 2);
   const rawProgress = clamp((frame - holdFrames) / activeFrames, 0, 1);
@@ -211,7 +213,7 @@ const buildCinematicCameraPath = (
   );
 
   for (let frame = 0; frame < durationInFrames; frame++) {
-    const progress = getProgress(frame, durationInFrames);
+    const progress = getProgress(frame, durationInFrames, fps);
     const distance = route.totalDistanceMeters * progress;
     const trackerPoint = pointAtDistance(route, distance).point;
     const targetCenter = pointAtDistance(route, distance + centerLead).point;

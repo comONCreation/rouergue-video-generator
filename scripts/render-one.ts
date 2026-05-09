@@ -10,7 +10,10 @@ import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
 import path from "node:path";
 import fs from "node:fs";
-import { getSegmentById } from "../src/data/segments";
+import {
+  computeSegmentDurationSeconds,
+  getSegmentById,
+} from "../src/data/segments";
 
 const ROOT = path.resolve(__dirname, "..");
 const OUT_DIR = path.join(ROOT, "out");
@@ -34,7 +37,7 @@ const main = async () => {
     process.exit(1);
   }
 
-  let duration = 30;
+  let duration = computeSegmentDurationSeconds(seg);
   const dIdx = args.indexOf("--duration");
   if (dIdx >= 0 && args[dIdx + 1]) duration = Number(args[dIdx + 1]);
   const overlayOnly = args.includes("--overlay");
