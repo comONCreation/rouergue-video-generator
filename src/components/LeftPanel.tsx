@@ -1,6 +1,6 @@
 import React from "react";
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { colors, fonts, layout } from "../theme";
+import { colors, layout } from "../theme";
 import {
   RALLY_TOTAL_KM,
   SECTIONS,
@@ -13,6 +13,7 @@ import { StageIndicator } from "./StageIndicator";
 import { SegmentBlock } from "./SegmentBlock";
 import { StageProgress } from "./StageProgress";
 import { formatKm } from "../format";
+import { labelStyle, valueMediumStyle } from "../typography";
 
 const Divider: React.FC = () => (
   <div
@@ -132,16 +133,10 @@ export const LeftPanel: React.FC<Props> = ({ segment, hide }) => {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            color: colors.whiteSubtle,
-            fontFamily: fonts.display,
-            fontSize: 12,
-            letterSpacing: 1.6,
-            textTransform: "uppercase",
-            fontWeight: 700,
           }}
         >
-          <span>Total rallye</span>
-          <span style={{ color: colors.white, fontWeight: 800, fontSize: 16 }}>
+          <span style={labelStyle}>Total rallye</span>
+          <span style={valueMediumStyle}>
             {formatKm(RALLY_TOTAL_KM)} km
           </span>
         </div>

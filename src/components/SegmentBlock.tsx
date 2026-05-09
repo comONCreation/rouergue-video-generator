@@ -2,6 +2,14 @@ import React from "react";
 import { colors, fonts } from "../theme";
 import type { Segment } from "../data/segments";
 import { formatKm } from "../format";
+import {
+  bodySmallStyle,
+  labelMicroStyle,
+  titleStyle,
+  unitStyle,
+  valueAccentStyle,
+  valueStyle,
+} from "../typography";
 
 export const SegmentBlock: React.FC<{ segment: Segment }> = ({ segment }) => {
   const isES = segment.type === "ES";
@@ -18,14 +26,21 @@ export const SegmentBlock: React.FC<{ segment: Segment }> = ({ segment }) => {
       }}
     >
       {/* Type badge + état */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+          flexWrap: "wrap",
+        }}
+      >
         <div
           style={{
             background: isES ? colors.orange : colors.white,
             color: isES ? colors.white : colors.blue,
             fontFamily: fonts.display,
-            fontWeight: 900,
-            fontSize: 16,
+            fontWeight: 800,
+            fontSize: 20,
             letterSpacing: 1.6,
             padding: "6px 14px",
             borderRadius: 4,
@@ -39,13 +54,13 @@ export const SegmentBlock: React.FC<{ segment: Segment }> = ({ segment }) => {
             style={{
               fontFamily: fonts.display,
               fontWeight: 700,
-              fontSize: 11,
+              fontSize: 13,
               letterSpacing: 1.4,
               color: colors.orange,
               textTransform: "uppercase",
               border: `1px solid ${colors.orange}`,
-              padding: "4px 8px",
-              borderRadius: 3,
+              padding: "9px 14px",
+              borderRadius: 4,
             }}
           >
             {segment.badge}
@@ -54,30 +69,17 @@ export const SegmentBlock: React.FC<{ segment: Segment }> = ({ segment }) => {
       </div>
 
       {/* Titre */}
-      <div
-        style={{
-          fontFamily: fonts.display,
-          fontWeight: 900,
-          fontSize: isES ? 30 : 22,
-          color: colors.white,
-          lineHeight: 1.08,
-          letterSpacing: 0.3,
-        }}
-      >
+      <div style={titleStyle}>
         {isES ? segment.title : `→ ${segment.toLocation}`}
       </div>
 
-      {/* From → To pour les liaisons */}
+      {/* "Depuis ..." pour les liaisons */}
       {!isES && segment.fromLocation && (
         <div
           style={{
-            fontFamily: fonts.display,
-            fontWeight: 500,
-            fontSize: 13,
-            color: colors.whiteFaint,
-            letterSpacing: 0.3,
+            ...bodySmallStyle,
             lineHeight: 1.3,
-            marginTop: -8,
+            marginTop: -4,
           }}
         >
           Depuis {segment.fromLocation}
@@ -119,39 +121,10 @@ const Stat: React.FC<{
   accent?: boolean;
 }> = ({ label, value, unit, accent }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-    <span
-      style={{
-        fontFamily: fonts.display,
-        fontWeight: 700,
-        fontSize: 11,
-        letterSpacing: 1.6,
-        color: colors.whiteFaint,
-        textTransform: "uppercase",
-      }}
-    >
-      {label}
-    </span>
-    <span
-      style={{
-        fontFamily: fonts.display,
-        fontWeight: 800,
-        fontSize: 24,
-        color: accent ? colors.orange : colors.white,
-        lineHeight: 1,
-      }}
-    >
+    <span style={labelMicroStyle}>{label}</span>
+    <span style={accent ? valueAccentStyle : valueStyle}>
       {value}
-      {unit && (
-        <span
-          style={{
-            fontWeight: 600,
-            fontSize: 14,
-            marginLeft: 4,
-          }}
-        >
-          {unit}
-        </span>
-      )}
+      {unit && <span style={unitStyle}>{unit}</span>}
     </span>
   </div>
 );

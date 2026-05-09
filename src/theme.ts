@@ -20,13 +20,13 @@ export const layout = {
   width: 1920,
   height: 1080,
   fps: 60,
-  panelWidth: 600,
+  panelWidth: 620,
   panelPadding: 36,
   // Compact mode (après minimisation)
-  compactWidth: 480,
-  compactHeight: 150,
+  compactWidth: 700,
+  compactPadding: 20,
   compactMargin: 32,
   // Timing (secondes)
-  minimizeAtSeconds: 5,
+  minimizeAtSeconds: 6,
   minimizeDurationSeconds: 0.6,
 };

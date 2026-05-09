@@ -1,6 +1,14 @@
 import React from "react";
-import { colors, fonts } from "../theme";
+import { colors } from "../theme";
 import { TOTAL_SECTIONS } from "../data/segments";
+import {
+  bodyStyle,
+  bodySmallStyle,
+  labelAccentStyle,
+  labelLargeStyle,
+  valueHeroStyle,
+  valueMediumStyle,
+} from "../typography";
 
 type Props = {
   stage: 1 | 2;
@@ -18,52 +26,20 @@ export const StageIndicator: React.FC<Props> = ({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+        <span style={labelLargeStyle}>Étape</span>
+        <span style={valueHeroStyle}>{stage}</span>
         <span
           style={{
-            fontFamily: fonts.display,
-            fontWeight: 800,
-            fontSize: 14,
-            letterSpacing: 2.4,
-            color: colors.whiteSubtle,
-            textTransform: "uppercase",
-          }}
-        >
-          Étape
-        </span>
-        <span
-          style={{
-            fontFamily: fonts.display,
-            fontWeight: 900,
-            fontSize: 38,
-            color: colors.white,
-            lineHeight: 1,
-          }}
-        >
-          {stage}
-        </span>
-        <span
-          style={{
-            fontFamily: fonts.display,
+            ...valueMediumStyle,
             fontWeight: 600,
-            fontSize: 18,
             color: colors.whiteFaint,
-            lineHeight: 1,
           }}
         >
           / 2
         </span>
       </div>
-      <span
-        style={{
-          fontFamily: fonts.display,
-          fontWeight: 500,
-          fontSize: 16,
-          color: colors.whiteSubtle,
-          letterSpacing: 0.4,
-        }}
-      >
-        {date}
-      </span>
+
+      <span style={bodyStyle}>{date}</span>
 
       <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
         {Array.from({ length: TOTAL_SECTIONS }).map((_, i) => {
@@ -87,37 +63,17 @@ export const StageIndicator: React.FC<Props> = ({
           );
         })}
       </div>
+
       <div
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: 2,
+          gap: 4,
           marginTop: 4,
         }}
       >
-        <span
-          style={{
-            fontFamily: fonts.display,
-            fontWeight: 800,
-            fontSize: 14,
-            letterSpacing: 2.2,
-            color: colors.orange,
-            textTransform: "uppercase",
-          }}
-        >
-          Section {section}
-        </span>
-        <span
-          style={{
-            fontFamily: fonts.display,
-            fontWeight: 500,
-            fontSize: 13,
-            color: colors.whiteFaint,
-            letterSpacing: 0.3,
-          }}
-        >
-          {sectionName}
-        </span>
+        <span style={labelAccentStyle}>Section {section}</span>
+        <span style={bodySmallStyle}>{sectionName}</span>
       </div>
     </div>
   );

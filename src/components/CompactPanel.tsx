@@ -1,5 +1,5 @@
 import React from "react";
-import { colors, fonts, layout } from "../theme";
+import { colors, layout } from "../theme";
 import type { Segment } from "../data/segments";
 import {
   RALLY_TOTAL_KM,
@@ -7,6 +7,13 @@ import {
   getStageTotalKm,
 } from "../data/segments";
 import { formatKm } from "../format";
+import {
+  labelStyle,
+  titleStyle,
+  unitStyle,
+  valueAccentStyle,
+  valueStyle,
+} from "../typography";
 
 type Props = {
   segment: Segment;
@@ -39,47 +46,38 @@ export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
       <div
         style={{
           display: "flex",
-          padding: "16px 18px",
-          gap: 16,
+          padding: layout.compactPadding,
+          gap: layout.compactPadding,
           alignItems: "stretch",
         }}
       >
-        {/* Badge type vertical */}
+        {/* Badge type vertical (carré) */}
         <div
           style={{
             background: isES ? colors.orange : "rgba(255,255,255,0.14)",
-            color: isES ? colors.white : colors.white,
-            padding: "10px 14px",
+            color: colors.white,
+            width: 96,
+            height: 96,
             borderRadius: 6,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            minWidth: 76,
+            alignSelf: "center",
+            flexShrink: 0,
           }}
         >
           <span
             style={{
-              fontFamily: fonts.display,
-              fontWeight: 800,
-              fontSize: 11,
-              letterSpacing: 2,
-              textTransform: "uppercase",
+              ...labelStyle,
+              color: colors.white,
               opacity: 0.85,
             }}
           >
             {isES ? "ES" : "Liaison"}
           </span>
           {isES && (
-            <span
-              style={{
-                fontFamily: fonts.display,
-                fontWeight: 900,
-                fontSize: 26,
-                lineHeight: 1,
-                marginTop: 2,
-              }}
-            >
+            <span style={{ ...valueStyle, marginTop: 2 }}>
               {segment.esNumber}
             </span>
           )}
@@ -96,26 +94,12 @@ export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
             minWidth: 0,
           }}
         >
-          <span
-            style={{
-              fontFamily: fonts.display,
-              fontWeight: 700,
-              fontSize: 10,
-              letterSpacing: 2,
-              color: colors.whiteSubtle,
-              textTransform: "uppercase",
-            }}
-          >
+          <span style={labelStyle}>
             Étape {segment.stage} · Section {segment.section}
           </span>
           <span
             style={{
-              fontFamily: fonts.display,
-              fontWeight: 900,
-              fontSize: isES ? 22 : 18,
-              color: colors.white,
-              lineHeight: 1.1,
-              letterSpacing: 0.3,
+              ...titleStyle,
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -131,37 +115,11 @@ export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
               marginTop: 2,
             }}
           >
-            <span
-              style={{
-                fontFamily: fonts.display,
-                fontWeight: 800,
-                fontSize: 18,
-                color: colors.orange,
-              }}
-            >
+            <span style={valueAccentStyle}>
               {formatKm(segment.distanceKm)}
-              <span
-                style={{
-                  fontWeight: 600,
-                  fontSize: 11,
-                  marginLeft: 3,
-                  color: colors.whiteSubtle,
-                }}
-              >
-                km
-              </span>
+              <span style={unitStyle}>km</span>
             </span>
-            <span
-              style={{
-                fontFamily: fonts.display,
-                fontWeight: 700,
-                fontSize: 15,
-                color: colors.white,
-                letterSpacing: 0.5,
-              }}
-            >
-              {segment.startTime}
-            </span>
+            <span style={valueStyle}>{segment.startTime}</span>
           </div>
         </div>
       </div>
@@ -189,32 +147,15 @@ export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
         style={{
           display: "flex",
           justifyContent: "space-between",
-          padding: "8px 18px",
+          padding: `${layout.compactPadding / 2}px ${layout.compactPadding}px`,
           background: "rgba(0, 0, 0, 0.25)",
         }}
       >
-        <span
-          style={{
-            fontFamily: fonts.display,
-            fontWeight: 700,
-            fontSize: 11,
-            letterSpacing: 1.4,
-            color: colors.whiteSubtle,
-            textTransform: "uppercase",
-          }}
-        >
-          Étape {segment.stage} · {formatKm(cumulativeKm)} / {formatKm(stageTotal)} km
+        <span style={labelStyle}>
+          Étape {segment.stage} · {formatKm(cumulativeKm)} /{" "}
+          {formatKm(stageTotal)} km
         </span>
-        <span
-          style={{
-            fontFamily: fonts.display,
-            fontWeight: 700,
-            fontSize: 11,
-            letterSpacing: 1.4,
-            color: colors.whiteFaint,
-            textTransform: "uppercase",
-          }}
-        >
+        <span style={{ ...labelStyle, color: colors.whiteFaint }}>
           Total {formatKm(RALLY_TOTAL_KM)} km
         </span>
       </div>

@@ -1,6 +1,7 @@
 import React from "react";
-import { colors, fonts } from "../theme";
+import { colors } from "../theme";
 import { formatKm } from "../format";
+import { bodySmallStyle, labelStyle, valueMediumStyle } from "../typography";
 
 type Props = {
   cumulativeKm: number;
@@ -17,18 +18,7 @@ export const StageProgress: React.FC<Props> = ({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <span
-        style={{
-          fontFamily: fonts.display,
-          fontWeight: 800,
-          fontSize: 12,
-          letterSpacing: 2.2,
-          color: colors.whiteSubtle,
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </span>
+      <span style={labelStyle}>{label}</span>
 
       <div
         style={{
@@ -51,27 +41,15 @@ export const StageProgress: React.FC<Props> = ({
         />
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <span
-          style={{
-            fontFamily: fonts.display,
-            fontWeight: 800,
-            fontSize: 18,
-            color: colors.white,
-          }}
-        >
-          {formatKm(cumulativeKm)} km
-        </span>
-        <span
-          style={{
-            fontFamily: fonts.display,
-            fontWeight: 600,
-            fontSize: 14,
-            color: colors.whiteSubtle,
-          }}
-        >
-          / {formatKm(totalKm)} km
-        </span>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+        }}
+      >
+        <span style={valueMediumStyle}>{formatKm(cumulativeKm)} km</span>
+        <span style={bodySmallStyle}>/ {formatKm(totalKm)} km</span>
       </div>
     </div>
   );
