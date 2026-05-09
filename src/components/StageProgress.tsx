@@ -1,17 +1,12 @@
 import React from "react";
 import { colors, fonts } from "../theme";
+import { formatKm } from "../format";
 
 type Props = {
   cumulativeKm: number;
   totalKm: number;
   label?: string;
 };
-
-const formatKm = (km: number) =>
-  km.toLocaleString("fr-FR", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  });
 
 export const StageProgress: React.FC<Props> = ({
   cumulativeKm,

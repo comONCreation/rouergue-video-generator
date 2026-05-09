@@ -12,6 +12,7 @@ import { Logo } from "./Logo";
 import { StageIndicator } from "./StageIndicator";
 import { SegmentBlock } from "./SegmentBlock";
 import { StageProgress } from "./StageProgress";
+import { formatKm } from "../format";
 
 const Divider: React.FC = () => (
   <div
@@ -95,7 +96,7 @@ export const LeftPanel: React.FC<Props> = ({ segment, hide }) => {
       }}
     >
       <AnimatedBlock delay={6}>
-        <Logo width={layout.panelWidth - layout.panelPadding * 2} />
+        <Logo width={340} style={{ margin: "0 auto" }} />
       </AnimatedBlock>
 
       <Divider />
@@ -141,10 +142,7 @@ export const LeftPanel: React.FC<Props> = ({ segment, hide }) => {
         >
           <span>Total rallye</span>
           <span style={{ color: colors.white, fontWeight: 800, fontSize: 16 }}>
-            {RALLY_TOTAL_KM.toLocaleString("fr-FR", {
-              maximumFractionDigits: 1,
-            })}{" "}
-            km
+            {formatKm(RALLY_TOTAL_KM)} km
           </span>
         </div>
       </AnimatedBlock>

@@ -1,12 +1,7 @@
 import React from "react";
 import { colors, fonts } from "../theme";
 import type { Segment } from "../data/segments";
-
-const formatKm = (km: number) =>
-  km.toLocaleString("fr-FR", {
-    minimumFractionDigits: km < 10 ? 3 : 2,
-    maximumFractionDigits: 3,
-  });
+import { formatKm } from "../format";
 
 export const SegmentBlock: React.FC<{ segment: Segment }> = ({ segment }) => {
   const isES = segment.type === "ES";
@@ -16,7 +11,6 @@ export const SegmentBlock: React.FC<{ segment: Segment }> = ({ segment }) => {
       style={{
         background: "rgba(0, 0, 0, 0.32)",
         borderLeft: `4px solid ${colors.orange}`,
-        borderRadius: 6,
         padding: "20px 22px",
         display: "flex",
         flexDirection: "column",
@@ -64,11 +58,10 @@ export const SegmentBlock: React.FC<{ segment: Segment }> = ({ segment }) => {
         style={{
           fontFamily: fonts.display,
           fontWeight: 900,
-          fontSize: isES ? 36 : 22,
+          fontSize: isES ? 30 : 22,
           color: colors.white,
           lineHeight: 1.08,
-          letterSpacing: isES ? 0.2 : 0.4,
-          textTransform: isES ? "uppercase" : "none",
+          letterSpacing: 0.3,
         }}
       >
         {isES ? segment.title : `→ ${segment.toLocation}`}

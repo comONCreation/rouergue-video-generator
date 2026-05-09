@@ -6,18 +6,7 @@ import {
   getCumulativeKm,
   getStageTotalKm,
 } from "../data/segments";
-
-const formatKm = (km: number) =>
-  km.toLocaleString("fr-FR", {
-    minimumFractionDigits: km < 10 ? 3 : 2,
-    maximumFractionDigits: 3,
-  });
-
-const formatKmShort = (km: number) =>
-  km.toLocaleString("fr-FR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 1,
-  });
+import { formatKm } from "../format";
 
 type Props = {
   segment: Segment;
@@ -42,7 +31,6 @@ export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
         transform: `translateY(${(1 - visibility) * 30}px)`,
         background: `linear-gradient(180deg, ${colors.panelBgTop}, ${colors.panelBgBottom})`,
         borderLeft: `4px solid ${colors.orange}`,
-        borderRadius: 8,
         boxShadow: `0 8px 24px ${colors.shadow}`,
         overflow: "hidden",
         boxSizing: "border-box",
@@ -128,7 +116,6 @@ export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
               color: colors.white,
               lineHeight: 1.1,
               letterSpacing: 0.3,
-              textTransform: isES ? "uppercase" : "none",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -216,7 +203,7 @@ export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
             textTransform: "uppercase",
           }}
         >
-          Étape {segment.stage} · {formatKmShort(cumulativeKm)} / {formatKmShort(stageTotal)} km
+          Étape {segment.stage} · {formatKm(cumulativeKm)} / {formatKm(stageTotal)} km
         </span>
         <span
           style={{
@@ -228,7 +215,7 @@ export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
             textTransform: "uppercase",
           }}
         >
-          Total {formatKmShort(RALLY_TOTAL_KM)} km
+          Total {formatKm(RALLY_TOTAL_KM)} km
         </span>
       </div>
     </div>
