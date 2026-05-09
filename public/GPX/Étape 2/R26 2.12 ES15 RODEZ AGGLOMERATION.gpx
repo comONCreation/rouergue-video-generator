@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="">
+  <wpt lat="44.35408" lon="2.55985">
+    <name>Départ ES 15 Rodez Agglomération</name>
+  </wpt>
+  <wpt lat="44.35435" lon="2.56519">
+    <name>Arrivée ES 15 Rodez Agglomération</name>
+  </wpt>
+  <wpt lat="44.354696" lon="2.566366">
+    <name>ZP 1 (buvette)</name>
+    <sym>ZP</sym>
+    <type>WPT</type>
+  </wpt>
+  <trk>
+    <name>R26 2.12 ES RODEZ AGGLOMERATION</name>
+    <desc>Parcours de Liaison</desc>
+    <trkseg>
+      <trkpt lat="44.35408" lon="2.55985"/>
+      <trkpt lat="44.35468" lon="2.5609"/>
+      <trkpt lat="44.3547" lon="2.56098"/>
+      <trkpt lat="44.35471" lon="2.56108"/>
+      <trkpt lat="44.35468" lon="2.5612"/>
+      <trkpt lat="44.35455" lon="2.5615"/>
+      <trkpt lat="44.35453" lon="2.56159"/>
+      <trkpt lat="44.35454" lon="2.56167"/>
+      <trkpt lat="44.35456" lon="2.56176"/>
+      <trkpt lat="44.35464" lon="2.56183"/>
+      <trkpt lat="44.3549" lon="2.56199"/>
+      <trkpt lat="44.35499" lon="2.5621"/>
+      <trkpt lat="44.35507" lon="2.5623"/>
+      <trkpt lat="44.35516" lon="2.56263"/>
+      <trkpt lat="44.3552" lon="2.56288"/>
+      <trkpt lat="44.35522" lon="2.56306"/>
+      <trkpt lat="44.35521" lon="2.56323"/>
+      <trkpt lat="44.35517" lon="2.56341"/>
+      <trkpt lat="44.35506" lon="2.56376"/>
+      <trkpt lat="44.35498" lon="2.56398"/>
+      <trkpt lat="44.35503" lon="2.56402"/>
+      <trkpt lat="44.35512" lon="2.56414"/>
+      <trkpt lat="44.35515" lon="2.56422"/>
+      <trkpt lat="44.35516" lon="2.56436"/>
+      <trkpt lat="44.35514" lon="2.56449"/>
+      <trkpt lat="44.35512" lon="2.5646"/>
+      <trkpt lat="44.3551" lon="2.56459"/>
+      <trkpt lat="44.35512" lon="2.5646"/>
+      <trkpt lat="44.35509" lon="2.56468"/>
+      <trkpt lat="44.3549" lon="2.56506"/>
+      <trkpt lat="44.35474" lon="2.56538"/>
+      <trkpt lat="44.3547" lon="2.56549"/>
+      <trkpt lat="44.35469" lon="2.56552"/>
+      <trkpt lat="44.35468" lon="2.56554"/>
+      <trkpt lat="44.35464" lon="2.56563"/>
+      <trkpt lat="44.3546" lon="2.56574"/>
+      <trkpt lat="44.35458" lon="2.56581"/>
+      <trkpt lat="44.35443" lon="2.56608"/>
+      <trkpt lat="44.35437" lon="2.56628"/>
+      <trkpt lat="44.3544" lon="2.56634"/>
+      <trkpt lat="44.35442" lon="2.56637"/>
+      <trkpt lat="44.35448" lon="2.56648"/>
+      <trkpt lat="44.35454" lon="2.56656"/>
+      <trkpt lat="44.35455" lon="2.56658"/>
+      <trkpt lat="44.35479" lon="2.56622"/>
+      <trkpt lat="44.35481" lon="2.56624"/>
+      <trkpt lat="44.3549" lon="2.56634"/>
+      <trkpt lat="44.35492" lon="2.56636"/>
+      <trkpt lat="44.3549" lon="2.56634"/>
+      <trkpt lat="44.35464" lon="2.56672"/>
+      <trkpt lat="44.35464" lon="2.56672"/>
+      <trkpt lat="44.35472" lon="2.56682"/>
+      <trkpt lat="44.35475" lon="2.56682"/>
+      <trkpt lat="44.35477" lon="2.56681"/>
+      <trkpt lat="44.35506" lon="2.56647"/>
+      <trkpt lat="44.35514" lon="2.5665"/>
+      <trkpt lat="44.35521" lon="2.56641"/>
+      <trkpt lat="44.3552" lon="2.5664"/>
+      <trkpt lat="44.35517" lon="2.56633"/>
+      <trkpt lat="44.35511" lon="2.56627"/>
+      <trkpt lat="44.35501" lon="2.56623"/>
+      <trkpt lat="44.35491" lon="2.56615"/>
+      <trkpt lat="44.35481" lon="2.56601"/>
+      <trkpt lat="44.35475" lon="2.56589"/>
+      <trkpt lat="44.35471" lon="2.56578"/>
+      <trkpt lat="44.3547" lon="2.56571"/>
+      <trkpt lat="44.35468" lon="2.56554"/>
+      <trkpt lat="44.35469" lon="2.56552"/>
+      <trkpt lat="44.3547" lon="2.56549"/>
+      <trkpt lat="44.35474" lon="2.56538"/>
+      <trkpt lat="44.3549" lon="2.56506"/>
+      <trkpt lat="44.35509" lon="2.56468"/>
+      <trkpt lat="44.35512" lon="2.5646"/>
+      <trkpt lat="44.35514" lon="2.56449"/>
+      <trkpt lat="44.35516" lon="2.56436"/>
+      <trkpt lat="44.35515" lon="2.56422"/>
+      <trkpt lat="44.35512" lon="2.56414"/>
+      <trkpt lat="44.35503" lon="2.56402"/>
+      <trkpt lat="44.35498" lon="2.56398"/>
+      <trkpt lat="44.35489" lon="2.56417"/>
+      <trkpt lat="44.35482" lon="2.56431"/>
+      <trkpt lat="44.35458" lon="2.56481"/>
+      <trkpt lat="44.35456" lon="2.56485"/>
+      <trkpt lat="44.35435" lon="2.56519"/>
+    </trkseg>
+  </trk>
+</gpx>

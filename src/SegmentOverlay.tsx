@@ -6,7 +6,8 @@ import { CompactPanel } from "./components/CompactPanel";
 import { getSegmentById } from "./data/segments";
 
 const { waitUntilDone } = loadFont("normal", {
-  weights: ["500", "600", "700", "800", "900"],
+  weights: ["500", "600", "700", "800"],
+  subsets: ["latin"],
 });
 
 export type SegmentOverlayProps = {

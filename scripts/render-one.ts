@@ -4,6 +4,7 @@
  * Usage :
  *   npm run render:one -- S1-ES1
  *   npm run render:one -- S1-ES1 --duration 12
+ *   npm run render:one -- S1-ES1 --overlay
  */
 import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
@@ -13,6 +14,11 @@ import { getSegmentById } from "../src/data/segments";
 
 const ROOT = path.resolve(__dirname, "..");
 const OUT_DIR = path.join(ROOT, "out");
+
+const ENV_FILE = path.join(ROOT, ".env");
+if (fs.existsSync(ENV_FILE)) {
+  process.loadEnvFile(ENV_FILE);
+}
 
 const main = async () => {
   const args = process.argv.slice(2);
@@ -31,6 +37,7 @@ const main = async () => {
   let duration = 30;
   const dIdx = args.indexOf("--duration");
   if (dIdx >= 0 && args[dIdx + 1]) duration = Number(args[dIdx + 1]);
+  const overlayOnly = args.includes("--overlay");
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
@@ -40,14 +47,29 @@ const main = async () => {
     webpackOverride: (c) => c,
   });
 
+  const compositionId = overlayOnly ? `OVERLAY-${seg.id}` : seg.id;
+  const envVariables = Object.fromEntries(
+    Object.entries(process.env).filter(
+      (entry): entry is [string, string] =>
+        entry[0].startsWith("REMOTION_") && typeof entry[1] === "string"
+    )
+  );
+
   const composition = await selectComposition({
     serveUrl: bundled,
-    id: seg.id,
+    id: compositionId,
+    envVariables,
+    chromiumOptions: { gl: "angle" },
   });
 
-  const outputPath = path.join(OUT_DIR, `${seg.id}.mov`);
+  const outputPath = path.join(
+    OUT_DIR,
+    overlayOnly ? `${seg.id}-overlay.mov` : `${seg.id}.mp4`
+  );
 
-  console.log(`🎬 Rendu ${seg.id} (${duration}s) → ${outputPath}`);
+  console.log(
+    `🎬 Rendu ${compositionId} (${duration}s) → ${outputPath}`
+  );
 
   await renderMedia({
     composition: {
@@ -55,10 +77,17 @@ const main = async () => {
       durationInFrames: Math.round(duration * composition.fps),
     },
     serveUrl: bundled,
-    codec: "prores",
-    proResProfile: "4444",
-    pixelFormat: "yuva444p10le",
+    codec: overlayOnly ? "prores" : "h264",
+    ...(overlayOnly
+      ? {
+          proResProfile: "4444" as const,
+          pixelFormat: "yuva444p10le" as const,
+        }
+      : {}),
     imageFormat: "png",
+    envVariables,
+    chromiumOptions: { gl: "angle" },
+    timeoutInMilliseconds: 120000,
     outputLocation: outputPath,
     onProgress: ({ progress }) => {
       process.stdout.write(`\r  ${Math.round(progress * 100)}%   `);

@@ -30,3 +30,113 @@ export const layout = {
   minimizeAtSeconds: 6,
   minimizeDurationSeconds: 0.6,
 };
+
+export const mapCamera = {
+  defaultStyle: "mapbox://styles/mapbox/standard-satellite",
+  zoom: 14,
+  pitch: {
+    es: 60,
+    liaison: 60,
+  },
+  padding: {
+    top: 96,
+    bottom: 96,
+    leftPanelGap: 80,
+    right: 140,
+  },
+  cinematic: {
+    centerLead: {
+      minMeters: 80,
+      maxMeters: 420,
+      routeDistanceRatio: 0.014,
+    },
+    centerHalfLifeSeconds: 0.9,
+    bearingLead: {
+      minMeters: 480,
+      maxMeters: 1800,
+      routeDistanceRatio: 0.045,
+    },
+    bearingWindow: {
+      minMeters: 900,
+      maxMeters: 3600,
+      routeDistanceRatio: 0.12,
+      sampleCount: 17,
+    },
+    bearingHalfLifeSeconds: 2.2,
+  },
+  progress: {
+    holdMaxFrames: 90,
+    holdDurationRatio: 0.08,
+  },
+  renderTimeouts: {
+    loadMapMs: 90000,
+    frameMs: 5000,
+    frameFallbackMs: 900,
+  },
+};
+
+export const mapRoute = {
+  outlineColor: "#111111",
+  fullRouteOpacity: 0.4,
+  fullOutlineOpacity: 0,
+  progressOutlineOpacity: 0.3,
+  fullOutlineExtraWidth: 0,
+  progressOutlineExtraWidth: 4,
+  lineWidthStops: {
+    lowZoom: 10,
+    lowWidth: 5,
+    midZoom: 13,
+    midWidth: 9,
+    highZoom: 16,
+    highWidth: 16,
+  },
+  tracker: {
+    haloColor: "rgba(255, 255, 255, 0.88)",
+    haloStrokeColor: "rgba(7, 17, 31, 0.8)",
+    haloStrokeWidth: 3,
+    coreStrokeColor: "#ffffff",
+    coreStrokeWidth: 2,
+    radiusStops: {
+      lowZoom: 10,
+      highZoom: 16,
+      haloLowRadius: 7,
+      haloHighRadius: 14,
+      coreLowRadius: 4,
+      coreHighRadius: 8,
+    },
+  },
+};
+
+export const mapTerrain = {
+  enabled: true,
+  sourceId: "mapbox-dem",
+  url: "mapbox://mapbox.mapbox-terrain-dem-v1",
+  tileSize: 512,
+  maxZoom: 14,
+  exaggeration: 1.2,
+};
+
+export const mapPins = {
+  startPath: "markers/start.png",
+  finishPath: "markers/finish.png",
+  standardPath: "markers/standard.png",
+  publicZonePath: "markers/zp.png",
+  iconSize: {
+    startFinish: 0.6,
+    standard: 0.6,
+    publicZone: 0.15,
+  },
+  label: {
+    textOffset: {
+      x: 0,
+      y: -11,
+    },
+    lowZoom: 10,
+    lowSize: 11,
+    highZoom: 15,
+    highSize: 16,
+    color: "#07111f",
+    haloColor: "rgba(255, 255, 255, 0.94)",
+    haloWidth: 2,
+  },
+};

@@ -14,6 +14,7 @@
     "@remotion/cli": "4.0.459",
     "@remotion/google-fonts": "4.0.459",
     "@remotion/renderer": "4.0.459",
+    "mapbox-gl": "^3.23.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "remotion": "4.0.459"

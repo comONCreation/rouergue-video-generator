@@ -5,6 +5,7 @@
  *   npm run render:all
  *   npm run render:all -- --duration 45      (durée par défaut en secondes)
  *   npm run render:all -- --only S1-ES1,S2-ES15
+ *   npm run render:all -- --overlay          (ancien mode alpha uniquement)
  *
  * Pour gérer des durées par segment, créer un fichier `durations.json` à la racine :
  *   { "S1-ES1": 18, "S1-L01": 60, ... }
@@ -23,15 +24,22 @@ const ROOT = path.resolve(__dirname, "..");
 const OUT_DIR = path.join(ROOT, "out");
 const DURATIONS_FILE = path.join(ROOT, "durations.json");
 
+const ENV_FILE = path.join(ROOT, ".env");
+if (fs.existsSync(ENV_FILE)) {
+  process.loadEnvFile(ENV_FILE);
+}
+
 type Args = {
   duration: number;
   only: string[] | null;
+  overlayOnly: boolean;
 };
 
 const parseArgs = (): Args => {
   const args = process.argv.slice(2);
   let duration = 30;
   let only: string[] | null = null;
+  let overlayOnly = false;
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--duration" && args[i + 1]) {
       duration = Number(args[i + 1]);
@@ -39,9 +47,11 @@ const parseArgs = (): Args => {
     } else if (args[i] === "--only" && args[i + 1]) {
       only = args[i + 1].split(",").map((s) => s.trim());
       i++;
+    } else if (args[i] === "--overlay") {
+      overlayOnly = true;
     }
   }
-  return { duration, only };
+  return { duration, only, overlayOnly };
 };
 
 const loadCustomDurations = (): Record<string, number> => {
@@ -54,7 +64,11 @@ const loadCustomDurations = (): Record<string, number> => {
   }
 };
 
-const safeFilename = (segment: Segment, index: number) => {
+const safeFilename = (
+  segment: Segment,
+  index: number,
+  overlayOnly: boolean
+) => {
   const slug = segment.toLocation
     ? segment.toLocation
         .toLowerCase()
@@ -69,12 +83,20 @@ const safeFilename = (segment: Segment, index: number) => {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
   const idx = String(index + 1).padStart(2, "0");
-  return `${segment.stage}-${idx}-${segment.id}-${slug}.mov`;
+  return `${segment.stage}-${idx}-${segment.id}-${slug}${
+    overlayOnly ? "-overlay.mov" : ".mp4"
+  }`;
 };
 
 const main = async () => {
-  const { duration: defaultDuration, only } = parseArgs();
+  const { duration: defaultDuration, only, overlayOnly } = parseArgs();
   const customDurations = loadCustomDurations();
+  const envVariables = Object.fromEntries(
+    Object.entries(process.env).filter(
+      (entry): entry is [string, string] =>
+        entry[0].startsWith("REMOTION_") && typeof entry[1] === "string"
+    )
+  );
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
@@ -103,9 +125,12 @@ const main = async () => {
       `[${i + 1}/${targets.length}] ${seg.id} — ${seg.title} (${segmentDuration}s)`
     );
 
+    const compositionId = overlayOnly ? `OVERLAY-${seg.id}` : seg.id;
     const composition = await selectComposition({
       serveUrl: bundled,
-      id: seg.id,
+      id: compositionId,
+      envVariables,
+      chromiumOptions: { gl: "angle" },
     });
 
     // Override de la durée pour matcher la vidéo AvoMap
@@ -114,16 +139,23 @@ const main = async () => {
       durationInFrames: Math.round(segmentDuration * composition.fps),
     };
 
-    const outputPath = path.join(OUT_DIR, safeFilename(seg, i));
+    const outputPath = path.join(OUT_DIR, safeFilename(seg, i, overlayOnly));
 
     await renderMedia({
       composition: composedWithDuration,
       serveUrl: bundled,
-      codec: "prores",
-      proResProfile: "4444",
-      // Alpha activé via la transparence du composition (backgroundColor: transparent)
-      pixelFormat: "yuva444p10le",
+      codec: overlayOnly ? "prores" : "h264",
+      ...(overlayOnly
+        ? {
+            proResProfile: "4444" as const,
+            // Alpha activé via la transparence du composition (backgroundColor: transparent)
+            pixelFormat: "yuva444p10le" as const,
+          }
+        : {}),
       imageFormat: "png",
+      envVariables,
+      chromiumOptions: { gl: "angle" },
+      timeoutInMilliseconds: 120000,
       outputLocation: outputPath,
       onProgress: ({ progress }) => {
         process.stdout.write(`\r  ${Math.round(progress * 100)}%   `);

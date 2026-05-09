@@ -1,5 +1,6 @@
 import React from "react";
 import { Composition } from "remotion";
+import { SegmentMapVideo } from "./SegmentMapVideo";
 import { SegmentOverlay } from "./SegmentOverlay";
 import { SEGMENTS } from "./data/segments";
 import { layout } from "./theme";
@@ -16,6 +17,18 @@ export const Root: React.FC = () => {
         <Composition
           key={segment.id}
           id={segment.id}
+          component={SegmentMapVideo}
+          width={layout.width}
+          height={layout.height}
+          fps={layout.fps}
+          durationInFrames={DEFAULT_DURATION_SECONDS * layout.fps}
+          defaultProps={{ segmentId: segment.id }}
+        />
+      ))}
+      {SEGMENTS.map((segment) => (
+        <Composition
+          key={`overlay-${segment.id}`}
+          id={`OVERLAY-${segment.id}`}
           component={SegmentOverlay}
           width={layout.width}
           height={layout.height}

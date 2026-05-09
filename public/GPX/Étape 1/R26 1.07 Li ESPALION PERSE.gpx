@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="">
+  <wpt lat="44.52149" lon="2.76878">
+    <name>Regroupement Espalion</name>
+  </wpt>
+  <wpt lat="44.51691" lon="2.77096">
+    <name>Départ ES 3-7 Espalion-Lassouts</name>
+  </wpt>
+  <trk>
+    <name>R26 1.07 Li ESPALION PERSE</name>
+    <desc>Parcours de liaison</desc>
+    <trkseg>
+      <trkpt lat="44.52149" lon="2.76878"/>
+      <trkpt lat="44.52146" lon="2.7687"/>
+      <trkpt lat="44.52135" lon="2.76849"/>
+      <trkpt lat="44.52126" lon="2.76835"/>
+      <trkpt lat="44.52113" lon="2.76811"/>
+      <trkpt lat="44.52096" lon="2.76769"/>
+      <trkpt lat="44.52088" lon="2.76753"/>
+      <trkpt lat="44.52081" lon="2.76743"/>
+      <trkpt lat="44.52074" lon="2.76723"/>
+      <trkpt lat="44.52066" lon="2.76687"/>
+      <trkpt lat="44.52064" lon="2.76678"/>
+      <trkpt lat="44.52055" lon="2.76638"/>
+      <trkpt lat="44.52041" lon="2.76579"/>
+      <trkpt lat="44.52039" lon="2.76569"/>
+      <trkpt lat="44.52048" lon="2.7651"/>
+      <trkpt lat="44.52049" lon="2.76507"/>
+      <trkpt lat="44.5205" lon="2.76498"/>
+      <trkpt lat="44.52051" lon="2.76481"/>
+      <trkpt lat="44.52042" lon="2.76481"/>
+      <trkpt lat="44.52036" lon="2.76487"/>
+      <trkpt lat="44.5201" lon="2.76546"/>
+      <trkpt lat="44.52008" lon="2.76549"/>
+      <trkpt lat="44.51926" lon="2.7666"/>
+      <trkpt lat="44.51904" lon="2.76674"/>
+      <trkpt lat="44.51895" lon="2.76685"/>
+      <trkpt lat="44.5189" lon="2.76692"/>
+      <trkpt lat="44.51885" lon="2.76707"/>
+      <trkpt lat="44.51884" lon="2.76715"/>
+      <trkpt lat="44.51882" lon="2.76743"/>
+      <trkpt lat="44.51885" lon="2.76781"/>
+      <trkpt lat="44.51888" lon="2.7681"/>
+      <trkpt lat="44.51888" lon="2.76826"/>
+      <trkpt lat="44.51866" lon="2.7683"/>
+      <trkpt lat="44.51811" lon="2.76839"/>
+      <trkpt lat="44.51803" lon="2.76848"/>
+      <trkpt lat="44.51793" lon="2.76884"/>
+      <trkpt lat="44.51784" lon="2.76905"/>
+      <trkpt lat="44.51768" lon="2.76932"/>
+      <trkpt lat="44.51753" lon="2.76971"/>
+      <trkpt lat="44.51745" lon="2.76976"/>
+      <trkpt lat="44.51655" lon="2.76991"/>
+      <trkpt lat="44.51657" lon="2.76996"/>
+      <trkpt lat="44.51689" lon="2.77069"/>
+      <trkpt lat="44.51693" lon="2.77084"/>
+      <trkpt lat="44.51691" lon="2.77096"/>
+    </trkseg>
+  </trk>
+</gpx>
