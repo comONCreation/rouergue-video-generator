@@ -1,0 +1,39 @@
+# Dépendances
+node_modules/
+
+# Sortie de rendu Remotion
+out/
+
+# Cache Remotion / build
+.cache/
+.remotion/
+dist/
+build/
+
+# IDE / éditeurs
+.idea/
+.vscode/
+*.iml
+
+# Outils Claude Code
+.claude/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Variables d'environnement
+.env
+.env.local
+.env.*.local
+
+# Durations override (généré localement à partir des clips AvoMap)
+durations.json
