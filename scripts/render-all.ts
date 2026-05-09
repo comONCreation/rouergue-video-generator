@@ -88,7 +88,7 @@ const safeFilename = (
         .replace(/(^-|-$)/g, "");
   const idx = String(index + 1).padStart(2, "0");
   return `${segment.stage}-${idx}-${segment.id}-${slug}${
-    overlayOnly ? "-overlay.mov" : ".mp4"
+    overlayOnly ? "-overlay.mov" : ".mov"
   }`;
 };
 
@@ -151,10 +151,10 @@ const main = async () => {
     await renderMedia({
       composition: composedWithDuration,
       serveUrl: bundled,
-      codec: overlayOnly ? "prores" : "h264",
+      codec: "prores",
+      proResProfile: overlayOnly ? ("4444" as const) : ("hq" as const),
       ...(overlayOnly
         ? {
-            proResProfile: "4444" as const,
             // Alpha activé via la transparence du composition (backgroundColor: transparent)
             pixelFormat: "yuva444p10le" as const,
           }

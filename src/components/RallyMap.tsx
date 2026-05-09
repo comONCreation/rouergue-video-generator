@@ -30,7 +30,7 @@ import {
   mapPins,
   mapRoute,
 } from "../theme";
-import type { Segment } from "../data/segments";
+import { SEGMENTS, type Segment } from "../data/segments";
 
 const ROUTE_FULL_SOURCE = "route-full";
 const ROUTE_PROGRESS_SOURCE = "route-progress";
@@ -65,38 +65,78 @@ const getRouteColor = (segment: Segment) =>
 const getPitch = (segment: Segment) =>
   segment.type === "ES" ? mapCamera.pitch.es : mapCamera.pitch.liaison;
 
+const formatEsWaypointLabel = (
+  rawName: string,
+  esNumber: number | undefined
+): string => {
+  if (esNumber === undefined) return rawName.replace(/\s+/g, " ").trim();
+  const esPattern = /\bES\s*\d+(?:\s*-\s*\d+)?\b/i;
+  const replaced = esPattern.test(rawName)
+    ? rawName.replace(esPattern, `ES ${esNumber}`)
+    : rawName.replace(
+        /^(\s*(?:D[ée]part|Arriv[ée]e))(\s+|$)/i,
+        `$1 ES ${esNumber} `
+      );
+  return replaced
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/(\bES\s*\d+)\s+/i, "$1\n");
+};
+
+const findAdjacentEsNumber = (
+  segment: Segment,
+  direction: "previous" | "next"
+): number | undefined => {
+  const idx = SEGMENTS.findIndex((s) => s.id === segment.id);
+  if (idx < 0) return undefined;
+  const step = direction === "next" ? 1 : -1;
+  for (let i = idx + step; i >= 0 && i < SEGMENTS.length; i += step) {
+    const candidate = SEGMENTS[i];
+    if (candidate.stage !== segment.stage) break;
+    if (candidate.type === "ES") return candidate.esNumber;
+  }
+  return undefined;
+};
+
 const getDisplayWaypoints = (
   segment: Segment,
   route: ParsedGpx
 ): GpxWaypoint[] => {
   if (segment.type !== "ES") {
-    return route.waypoints.map((waypoint) => ({
-      ...waypoint,
-      kind:
-        waypoint.kind === "public-zone"
-          ? ("public-zone" as const)
-          : ("standard" as const),
-    }));
+    return route.waypoints.map((waypoint) => {
+      if (waypoint.kind === "public-zone") return waypoint;
+      if (waypoint.kind === "start") {
+        const esNumber = findAdjacentEsNumber(segment, "next");
+        return {
+          ...waypoint,
+          name:
+            esNumber !== undefined
+              ? formatEsWaypointLabel(waypoint.name, esNumber)
+              : waypoint.name,
+        };
+      }
+      if (waypoint.kind === "finish") {
+        const esNumber = findAdjacentEsNumber(segment, "previous");
+        return {
+          ...waypoint,
+          name:
+            esNumber !== undefined
+              ? formatEsWaypointLabel(waypoint.name, esNumber)
+              : waypoint.name,
+        };
+      }
+      return { ...waypoint, kind: "standard" as const };
+    });
   }
 
-  const nonPublicZoneIndexes = route.waypoints
-    .map((waypoint, index) =>
-      waypoint.kind === "public-zone" ? null : index
-    )
-    .filter((index): index is number => index !== null);
-  const startIndex = nonPublicZoneIndexes[0];
-  const namedFinishIndex = route.waypoints.findIndex(
-    (waypoint) => waypoint.kind === "finish"
-  );
-  const finishIndex =
-    namedFinishIndex >= 0
-      ? namedFinishIndex
-      : nonPublicZoneIndexes[nonPublicZoneIndexes.length - 1];
-
-  return route.waypoints.map((waypoint, index) => {
+  return route.waypoints.map((waypoint) => {
     if (waypoint.kind === "public-zone") return waypoint;
-    if (index === startIndex) return { ...waypoint, kind: "start" as const };
-    if (index === finishIndex) return { ...waypoint, kind: "finish" as const };
+    if (waypoint.kind === "start" || waypoint.kind === "finish") {
+      return {
+        ...waypoint,
+        name: formatEsWaypointLabel(waypoint.name, segment.esNumber),
+      };
+    }
     return { ...waypoint, kind: "standard" as const };
   });
 };
@@ -454,7 +494,9 @@ const addRouteLayers = (
       "icon-allow-overlap": true,
       "icon-ignore-placement": true,
       "text-field": ["get", "label"],
-      "text-font": ["DIN Offc Pro Bold", "Arial Unicode MS Bold"],
+      "text-font": mapPins.label.font,
+      "text-letter-spacing": mapPins.label.letterSpacing,
+      "text-max-width": mapPins.label.maxWidth,
       "text-size": [
         "interpolate",
         ["linear"],
@@ -473,6 +515,7 @@ const addRouteLayers = (
       "text-color": mapPins.label.color,
       "text-halo-color": mapPins.label.haloColor,
       "text-halo-width": mapPins.label.haloWidth,
+      "text-halo-blur": mapPins.label.haloBlur,
     },
   } as mapboxgl.SymbolLayerSpecification);
 };

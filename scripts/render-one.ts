@@ -67,7 +67,7 @@ const main = async () => {
 
   const outputPath = path.join(
     OUT_DIR,
-    overlayOnly ? `${seg.id}-overlay.mov` : `${seg.id}.mp4`
+    overlayOnly ? `${seg.id}-overlay.mov` : `${seg.id}.mov`
   );
 
   console.log(
@@ -80,12 +80,10 @@ const main = async () => {
       durationInFrames: Math.round(duration * composition.fps),
     },
     serveUrl: bundled,
-    codec: overlayOnly ? "prores" : "h264",
+    codec: "prores",
+    proResProfile: overlayOnly ? ("4444" as const) : ("hq" as const),
     ...(overlayOnly
-      ? {
-          proResProfile: "4444" as const,
-          pixelFormat: "yuva444p10le" as const,
-        }
+      ? { pixelFormat: "yuva444p10le" as const }
       : {}),
     imageFormat: "png",
     envVariables,
