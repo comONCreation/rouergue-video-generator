@@ -58,6 +58,7 @@ const main = async () => {
     codec: "prores",
     proResProfile: "4444",
     pixelFormat: "yuva444p10le",
+    imageFormat: "png",
     outputLocation: outputPath,
     onProgress: ({ progress }) => {
       process.stdout.write(`\r  ${Math.round(progress * 100)}%   `);

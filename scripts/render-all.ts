@@ -123,6 +123,7 @@ const main = async () => {
       proResProfile: "4444",
       // Alpha activé via la transparence du composition (backgroundColor: transparent)
       pixelFormat: "yuva444p10le",
+      imageFormat: "png",
       outputLocation: outputPath,
       onProgress: ({ progress }) => {
         process.stdout.write(`\r  ${Math.round(progress * 100)}%   `);
