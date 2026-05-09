@@ -29,7 +29,6 @@ import {
   mapCamera,
   mapPins,
   mapRoute,
-  mapTerrain,
 } from "../theme";
 import type { Segment } from "../data/segments";
 
@@ -277,24 +276,6 @@ const setGeoJsonData = (
 ) => {
   const source = map.getSource(sourceId) as mapboxgl.GeoJSONSource | undefined;
   source?.setData(data);
-};
-
-const addTerrain = (map: mapboxgl.Map) => {
-  if (!mapTerrain.enabled) return;
-
-  if (!map.getSource(mapTerrain.sourceId)) {
-    map.addSource(mapTerrain.sourceId, {
-      type: "raster-dem",
-      url: mapTerrain.url,
-      tileSize: mapTerrain.tileSize,
-      maxzoom: mapTerrain.maxZoom,
-    });
-  }
-
-  map.setTerrain({
-    source: mapTerrain.sourceId,
-    exaggeration: mapTerrain.exaggeration,
-  });
 };
 
 const addRouteLayers = (
@@ -623,7 +604,6 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
               loadMapImage(map, PIN_PUBLIC_ZONE, mapPins.publicZonePath, 2),
             ]);
 
-            addTerrain(map);
             addRouteLayers(map, route, segment);
             updateMapFrame(map, route, segment, start);
 

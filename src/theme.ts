@@ -32,11 +32,11 @@ export const layout = {
 };
 
 export const mapCamera = {
-  defaultStyle: "mapbox://styles/mapbox/standard-satellite",
+  defaultStyle: "mapbox://styles/comoncreation/cmoyoojin000r01sfep4hdvb9",
   zoom: 14,
   pitch: {
-    es: 60,
-    liaison: 60,
+    es: 45,
+    liaison: 45,
   },
   padding: {
     top: 96,
@@ -77,18 +77,15 @@ export const mapCamera = {
 
 export const mapRoute = {
   outlineColor: "#111111",
-  fullRouteOpacity: 0.4,
+  fullRouteOpacity: 0.2,
   fullOutlineOpacity: 0,
-  progressOutlineOpacity: 0.3,
+  progressOutlineOpacity: 0.2,
   fullOutlineExtraWidth: 0,
   progressOutlineExtraWidth: 4,
   lineWidthStops: {
-    lowZoom: 10,
-    lowWidth: 5,
-    midZoom: 13,
-    midWidth: 9,
-    highZoom: 16,
-    highWidth: 16,
+    lowZoom: 10, lowWidth: 4,
+    midZoom: 13, midWidth: 7,
+    highZoom: 16, highWidth: 12,
   },
   tracker: {
     haloColor: "rgba(255, 255, 255, 0.88)",
@@ -105,15 +102,6 @@ export const mapRoute = {
       coreHighRadius: 8,
     },
   },
-};
-
-export const mapTerrain = {
-  enabled: true,
-  sourceId: "mapbox-dem",
-  url: "mapbox://mapbox.mapbox-terrain-dem-v1",
-  tileSize: 512,
-  maxZoom: 14,
-  exaggeration: 1.2,
 };
 
 export const mapPins = {
