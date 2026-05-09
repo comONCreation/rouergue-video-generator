@@ -1,0 +1,332 @@
+import {
+  distanceMeters,
+  type GpxWaypoint,
+  type LonLat,
+} from "./gpx";
+import type { Segment } from "./data/segments";
+import { mapCamera } from "./theme";
+import type { StagedRoute, StagedSegmentSpan } from "./stagedRoute";
+
+export type KeyPointType =
+  | "stage-start"
+  | "stage-finish"
+  | "es-start"
+  | "es-finish"
+  | "assistance"
+  | "regrouping";
+
+export type StageKeyPoint = {
+  type: KeyPointType;
+  distance: number;
+  segment: Segment;
+  label: string;
+  subtitle?: string;
+  rawWaypoint?: GpxWaypoint;
+  holdSeconds: number;
+};
+
+export type Phase =
+  | {
+      kind: "hold";
+      keyPointIndex: number;
+      startTime: number;
+      endTime: number;
+    }
+  | {
+      kind: "transit";
+      fromIndex: number;
+      toIndex: number;
+      startTime: number;
+      endTime: number;
+    };
+
+export type StageTimeline = {
+  keyPoints: StageKeyPoint[];
+  phases: Phase[];
+  totalSeconds: number;
+};
+
+const COINCIDENT_THRESHOLD_METERS = 100;
+const TYPE_PRIORITY: Record<KeyPointType, number> = {
+  "stage-start": 5,
+  "stage-finish": 5,
+  "es-start": 4,
+  "es-finish": 4,
+  assistance: 3,
+  regrouping: 3,
+};
+
+const holdSecondsForType = (type: KeyPointType): number => {
+  const holds = mapCamera.stageVideo.keyPointHolds;
+  switch (type) {
+    case "stage-start":
+      return holds.stageStart;
+    case "stage-finish":
+      return holds.stageFinish;
+    case "es-start":
+      return holds.esStart;
+    case "es-finish":
+      return holds.esFinish;
+    case "assistance":
+      return holds.assistance;
+    case "regrouping":
+      return holds.regrouping;
+  }
+};
+
+const findDistanceForCoordinateInSpan = (
+  route: StagedRoute,
+  span: StagedSegmentSpan,
+  coordinate: LonLat
+): number | null => {
+  let bestDist = Infinity;
+  let bestIndex = -1;
+  for (let i = span.startIndex; i <= span.endIndex; i++) {
+    const d = distanceMeters(route.coordinates[i], coordinate);
+    if (d < bestDist) {
+      bestDist = d;
+      bestIndex = i;
+    }
+  }
+  if (bestIndex < 0) return null;
+  return route.cumulativeDistances[bestIndex];
+};
+
+const classifyKeyPoint = (
+  waypoint: GpxWaypoint,
+  _segment: Segment
+): KeyPointType | null => {
+  // Les ZP ne déclenchent pas d'arrêt — affichées uniquement comme pins sur la
+  // carte, sans pause de la caméra ni overlay.
+  if (waypoint.kind === "public-zone") return null;
+  const lowered = waypoint.name.toLowerCase();
+  if (lowered.includes("assistance")) return "assistance";
+  if (lowered.includes("regroupement")) return "regrouping";
+  if (waypoint.kind === "start") return "es-start";
+  if (waypoint.kind === "finish") return "es-finish";
+  return null;
+};
+
+const buildLabel = (
+  type: KeyPointType,
+  waypoint: GpxWaypoint | undefined,
+  segment: Segment
+): { label: string; subtitle?: string } => {
+  if (type === "stage-start") {
+    return {
+      label: segment.fromLocation ?? "Départ",
+      subtitle: `Étape ${segment.stage}`,
+    };
+  }
+  if (type === "stage-finish") {
+    return {
+      label: segment.toLocation ?? "Arrivée",
+      subtitle: `Étape ${segment.stage}`,
+    };
+  }
+  if (!waypoint) {
+    return { label: segment.title };
+  }
+  if (type === "assistance") {
+    return { label: waypoint.name, subtitle: "Assistance" };
+  }
+  if (type === "regrouping") {
+    return { label: waypoint.name, subtitle: "Regroupement" };
+  }
+  return { label: waypoint.name.replace(/\n/g, " ") };
+};
+
+const computeTransitSpeedKmh = (
+  route: StagedRoute,
+  fromDistance: number,
+  toDistance: number
+): number => {
+  let esLength = 0;
+  let liaisonLength = 0;
+  for (const span of route.segments) {
+    const overlap =
+      Math.max(0, Math.min(toDistance, span.endDistance)) -
+      Math.max(fromDistance, span.startDistance);
+    if (overlap <= 0) continue;
+    if (span.segment.type === "ES") esLength += overlap;
+    else liaisonLength += overlap;
+  }
+  const totalLength = esLength + liaisonLength;
+  if (totalLength <= 0) return mapCamera.cameraSpeed.liaison;
+  const esSpeedMs = mapCamera.cameraSpeed.es / 3.6;
+  const liaisonSpeedMs = mapCamera.cameraSpeed.liaison / 3.6;
+  const totalTime = esLength / esSpeedMs + liaisonLength / liaisonSpeedMs;
+  if (totalTime <= 0) return mapCamera.cameraSpeed.liaison;
+  return (totalLength / totalTime) * 3.6;
+};
+
+export const buildStageTimeline = (route: StagedRoute): StageTimeline => {
+  const collected: StageKeyPoint[] = [];
+
+  const firstSpan = route.segments[0];
+  const lastSpan = route.segments[route.segments.length - 1];
+
+  const startLabel = buildLabel("stage-start", undefined, firstSpan.segment);
+  collected.push({
+    type: "stage-start",
+    distance: 0,
+    segment: firstSpan.segment,
+    label: startLabel.label,
+    subtitle: startLabel.subtitle,
+    holdSeconds: holdSecondsForType("stage-start"),
+  });
+
+  for (let i = 0; i < route.segmentRoutes.length; i++) {
+    const { segment, route: parsed } = route.segmentRoutes[i];
+    const span = route.segments[i];
+    if (!span) continue;
+    for (const waypoint of parsed.waypoints) {
+      const type = classifyKeyPoint(waypoint, segment);
+      if (!type) continue;
+      const distance = findDistanceForCoordinateInSpan(
+        route,
+        span,
+        waypoint.coordinates
+      );
+      if (distance === null) continue;
+      const { label, subtitle } = buildLabel(type, waypoint, segment);
+      collected.push({
+        type,
+        distance,
+        segment,
+        label,
+        subtitle,
+        rawWaypoint: waypoint,
+        holdSeconds: holdSecondsForType(type),
+      });
+    }
+  }
+
+  const finishLabel = buildLabel("stage-finish", undefined, lastSpan.segment);
+  collected.push({
+    type: "stage-finish",
+    distance: route.totalDistanceMeters,
+    segment: lastSpan.segment,
+    label: finishLabel.label,
+    subtitle: finishLabel.subtitle,
+    holdSeconds: holdSecondsForType("stage-finish"),
+  });
+
+  collected.sort((a, b) => a.distance - b.distance);
+
+  const keyPoints: StageKeyPoint[] = [];
+  for (const kp of collected) {
+    const prev = keyPoints[keyPoints.length - 1];
+    if (prev && Math.abs(kp.distance - prev.distance) < COINCIDENT_THRESHOLD_METERS) {
+      // À distance ~égale, le doublon vient typiquement des waypoints
+      // partagés à la jonction de deux GPX consécutifs (fin du segment N
+      // = début du segment N+1). On garde la version associée au segment
+      // "entrant" pour que l'overlay décrive ce qu'on rejoint, pas ce qu'on
+      // quitte. À priorité strictement supérieure, on remplace toujours.
+      if (TYPE_PRIORITY[kp.type] >= TYPE_PRIORITY[prev.type]) {
+        keyPoints[keyPoints.length - 1] = kp;
+      }
+      continue;
+    }
+    keyPoints.push(kp);
+  }
+
+  const phases: Phase[] = [];
+  let cursor = 0;
+  for (let i = 0; i < keyPoints.length; i++) {
+    const kp = keyPoints[i];
+    phases.push({
+      kind: "hold",
+      keyPointIndex: i,
+      startTime: cursor,
+      endTime: cursor + kp.holdSeconds,
+    });
+    cursor += kp.holdSeconds;
+
+    if (i < keyPoints.length - 1) {
+      const next = keyPoints[i + 1];
+      const distanceMeters_ = Math.max(0, next.distance - kp.distance);
+      const speedKmh = computeTransitSpeedKmh(route, kp.distance, next.distance);
+      const transitSeconds = Math.max(
+        0.2,
+        (distanceMeters_ / 1000 / speedKmh) * 3600
+      );
+      phases.push({
+        kind: "transit",
+        fromIndex: i,
+        toIndex: i + 1,
+        startTime: cursor,
+        endTime: cursor + transitSeconds,
+      });
+      cursor += transitSeconds;
+    }
+  }
+
+  return {
+    keyPoints,
+    phases,
+    totalSeconds: cursor,
+  };
+};
+
+const smoothStep = (value: number) => value * value * (3 - 2 * value);
+
+export const getDistanceAtTime = (
+  timeline: StageTimeline,
+  time: number
+): number => {
+  if (timeline.keyPoints.length === 0) return 0;
+  for (const phase of timeline.phases) {
+    if (time < phase.endTime) {
+      if (phase.kind === "hold") {
+        return timeline.keyPoints[phase.keyPointIndex].distance;
+      }
+      const localT =
+        (time - phase.startTime) /
+        Math.max(1e-6, phase.endTime - phase.startTime);
+      const eased = smoothStep(Math.max(0, Math.min(1, localT)));
+      const from = timeline.keyPoints[phase.fromIndex].distance;
+      const to = timeline.keyPoints[phase.toIndex].distance;
+      return from + (to - from) * eased;
+    }
+  }
+  return timeline.keyPoints[timeline.keyPoints.length - 1].distance;
+};
+
+export type ActiveContext = {
+  phase: Phase;
+  currentKeyPoint: StageKeyPoint | null;
+  upcomingKeyPoint: StageKeyPoint | null;
+  holdLocalProgress: number; // 0..1 if in a hold, else 0
+  transitLocalProgress: number; // 0..1 if in transit, else 0
+};
+
+export const getActiveContext = (
+  timeline: StageTimeline,
+  time: number
+): ActiveContext | null => {
+  for (const phase of timeline.phases) {
+    if (time < phase.endTime) {
+      if (phase.kind === "hold") {
+        const local = (time - phase.startTime) / (phase.endTime - phase.startTime);
+        return {
+          phase,
+          currentKeyPoint: timeline.keyPoints[phase.keyPointIndex],
+          upcomingKeyPoint:
+            timeline.keyPoints[phase.keyPointIndex + 1] ?? null,
+          holdLocalProgress: Math.max(0, Math.min(1, local)),
+          transitLocalProgress: 0,
+        };
+      }
+      const local = (time - phase.startTime) / (phase.endTime - phase.startTime);
+      return {
+        phase,
+        currentKeyPoint: null,
+        upcomingKeyPoint: timeline.keyPoints[phase.toIndex],
+        holdLocalProgress: 0,
+        transitLocalProgress: Math.max(0, Math.min(1, local)),
+      };
+    }
+  }
+  return null;
+};

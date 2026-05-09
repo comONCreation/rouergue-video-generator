@@ -549,7 +549,36 @@ export const computeSegmentDurationSeconds = (segment: Segment): number => {
       : mapCamera.cameraSpeed.liaison;
   const distanceKm = Math.max(0, segment.distanceKm);
   const activeSeconds = speedKmh > 0 ? (distanceKm / speedKmh) * 3600 : 0;
-  return mapCamera.progress.holdSeconds * 2 + activeSeconds;
+  return mapCamera.segmentVideo.introOutroHoldSeconds * 2 + activeSeconds;
+};
+
+export const computeStageContinuousDurationSeconds = (
+  stage: 1 | 2
+): number => {
+  const segments = SEGMENTS.filter((s) => s.stage === stage);
+  const holds = mapCamera.stageVideo.keyPointHolds;
+  const esCount = segments.filter((s) => s.type === "ES").length;
+  const liaisonCount = segments.filter((s) => s.type !== "ES").length;
+  const activeSeconds = segments.reduce((acc, segment) => {
+    const speedKmh =
+      segment.type === "ES"
+        ? mapCamera.cameraSpeed.es
+        : mapCamera.cameraSpeed.liaison;
+    const distanceKm = Math.max(0, segment.distanceKm);
+    return acc + (speedKmh > 0 ? (distanceKm / speedKmh) * 3600 : 0);
+  }, 0);
+  // Estimation des holds : 1 départ + 1 arrivée d'étape, 2 holds par ES
+  // (départ + arrivée), 1 hold par liaison côté entrée d'ES, plus marge pour
+  // assistances et regroupements — généreusement sur-évalué pour ne rien
+  // tronquer.
+  const estimatedHolds =
+    holds.stageStart +
+    holds.stageFinish +
+    esCount * (holds.esStart + holds.esFinish) +
+    liaisonCount * holds.esStart +
+    Math.max(2, Math.round(liaisonCount / 4)) * holds.assistance +
+    liaisonCount * holds.regrouping;
+  return activeSeconds + estimatedHolds + 10;
 };
 
 export const SECTIONS = [

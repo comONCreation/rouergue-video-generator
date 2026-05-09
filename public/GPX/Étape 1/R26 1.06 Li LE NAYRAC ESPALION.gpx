@@ -3,7 +3,7 @@
   <wpt lat="44.59922" lon="2.66466">
     <name>Arrivée ES 2-6 Le Nayrac</name>
   </wpt>
-  <wpt lat="44.52052" lon="2.76475">
+  <wpt lat="44.52149" lon="2.76878">
     <name>Regroupement Espalion</name>
   </wpt>
   <trk>
@@ -430,6 +430,16 @@
       <trkpt lat="44.52056" lon="2.76445"/>
       <trkpt lat="44.52052" lon="2.76461"/>
       <trkpt lat="44.52052" lon="2.76475"/>
+      <trkpt lat="44.52062" lon="2.76515"/>
+      <trkpt lat="44.52071" lon="2.76556"/>
+      <trkpt lat="44.52081" lon="2.76596"/>
+      <trkpt lat="44.52091" lon="2.76636"/>
+      <trkpt lat="44.52101" lon="2.76677"/>
+      <trkpt lat="44.52110" lon="2.76717"/>
+      <trkpt lat="44.52120" lon="2.76757"/>
+      <trkpt lat="44.52130" lon="2.76797"/>
+      <trkpt lat="44.52139" lon="2.76838"/>
+      <trkpt lat="44.52149" lon="2.76878"/>
     </trkseg>
   </trk>
 </gpx>

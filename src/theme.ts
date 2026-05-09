@@ -64,12 +64,28 @@ export const mapCamera = {
     },
     bearingHalfLifeSeconds: 2.2,
   },
-  progress: {
-    holdSeconds: 3,
+  // Vidéos par segment unitaire (S1-ES1, OVERLAY-S1-L01, …).
+  segmentVideo: {
+    // Caméra immobile pendant cette durée au tout début (intro) ET à la fin
+    // (outro) de chaque vidéo de segment, pour laisser l'overlay s'animer.
+    introOutroHoldSeconds: 3,
   },
   cameraSpeed: {
     es: 2500,
     liaison: 4500,
+  },
+  // Vidéo continue d'étape complète (FULL-S1, FULL-S2).
+  stageVideo: {
+    // Durée des pauses caméra à chaque key point intermédiaire ; entre deux
+    // key points, la caméra avance en transit à `cameraSpeed`.
+    keyPointHolds: {
+      stageStart: 4,
+      stageFinish: 4,
+      esStart: 4,
+      esFinish: 4,
+      assistance: 3,
+      regrouping: 3,
+    },
   },
   renderTimeouts: {
     loadMapMs: 90000,

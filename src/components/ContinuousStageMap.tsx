@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import type { Feature, Point } from "geojson";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import type { Feature, FeatureCollection, LineString, Point } from "geojson";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import {
@@ -13,14 +13,12 @@ import {
 import {
   bearingDegrees,
   distanceMeters,
-  parseGpx,
   pointAtDistance,
-  routeCoordinatesUntilDistance,
-  routeFeature,
   waypointCollection,
   type GpxWaypoint,
   type LonLat,
   type ParsedGpx,
+  type WaypointKind,
 } from "../gpx";
 import {
   colors,
@@ -31,6 +29,28 @@ import {
   mapRoute,
 } from "../theme";
 import { SEGMENTS, type Segment } from "../data/segments";
+import {
+  findActiveSegmentSpan,
+  spanCoordinatesUntilDistance,
+  type StagedRoute,
+  type StagedSegmentSpan,
+} from "../stagedRoute";
+import {
+  getDistanceAtTime,
+  type StageTimeline,
+} from "../stageTimeline";
+
+type ContinuousStageMapProps = {
+  route: StagedRoute;
+  timeline: StageTimeline;
+};
+
+type CameraState = {
+  distance: number;
+  center: LonLat;
+  bearing: number;
+  trackerPoint: LonLat;
+};
 
 const ROUTE_FULL_SOURCE = "route-full";
 const ROUTE_PROGRESS_SOURCE = "route-progress";
@@ -42,28 +62,140 @@ const PIN_FINISH = "pin-finish";
 const PIN_PUBLIC_ZONE = "pin-public-zone";
 const PIN_STANDARD = "pin-standard";
 
-type RallyMapProps = {
-  segment: Segment;
-  gpxPath: string;
-};
-
-type CameraState = {
-  distance: number;
-  center: LonLat;
-  bearing: number;
-  trackerPoint: LonLat;
-};
-
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
 const smoothStep = (value: number) => value * value * (3 - 2 * value);
 
-const getRouteColor = (segment: Segment) =>
-  segment.type === "ES" ? colors.orange : colors.blue;
+const lerpLonLat = (from: LonLat, to: LonLat, alpha: number): LonLat => [
+  from[0] + (to[0] - from[0]) * alpha,
+  from[1] + (to[1] - from[1]) * alpha,
+];
 
-const getPitch = (segment: Segment) =>
-  segment.type === "ES" ? mapCamera.pitch.es : mapCamera.pitch.liaison;
+const shortestAngleDelta = (from: number, to: number) =>
+  ((((to - from) % 360) + 540) % 360) - 180;
+
+const lerpBearing = (from: number, to: number, alpha: number) =>
+  (from + shortestAngleDelta(from, to) * alpha + 360) % 360;
+
+const halfLifeAlpha = (halfLifeSeconds: number, fps: number) => {
+  if (halfLifeSeconds <= 0) return 1;
+  return 1 - 2 ** (-1 / (halfLifeSeconds * fps));
+};
+
+const getSmoothingWindow = (
+  totalDistance: number,
+  config: { minMeters: number; maxMeters: number; routeDistanceRatio: number }
+) =>
+  clamp(
+    totalDistance * config.routeDistanceRatio,
+    config.minMeters,
+    config.maxMeters
+  );
+
+const getOddSampleCount = (sampleCount: number) =>
+  Math.max(3, Math.ceil(sampleCount) | 1);
+
+const getSmoothedBearing = (
+  route: ParsedGpx,
+  distance: number,
+  windowMeters: number,
+  sampleCount: number
+) => {
+  const samples = getOddSampleCount(sampleCount);
+  let x = 0;
+  let y = 0;
+  let weightTotal = 0;
+
+  for (let index = 0; index < samples; index++) {
+    const progress = samples === 1 ? 0 : index / (samples - 1);
+    const centerDistance =
+      distance - windowMeters + progress * windowMeters * 2;
+    const startDistance = centerDistance - windowMeters * 0.5;
+    const endDistance = centerDistance + windowMeters * 0.5;
+    const start = pointAtDistance(route, startDistance).point;
+    const end = pointAtDistance(route, endDistance).point;
+    if (distanceMeters(start, end) < 1) continue;
+
+    const bearing = (bearingDegrees(start, end) * Math.PI) / 180;
+    const weight = 1 - Math.abs(progress - 0.5) * 1.5;
+
+    x += Math.cos(bearing) * weight;
+    y += Math.sin(bearing) * weight;
+    weightTotal += weight;
+  }
+
+  if (weightTotal === 0) {
+    return pointAtDistance(route, distance).bearing;
+  }
+
+  return (
+    ((Math.atan2(y / weightTotal, x / weightTotal) * 180) / Math.PI + 360) % 360
+  );
+};
+
+const buildContinuousCameraPath = (
+  route: StagedRoute,
+  timeline: StageTimeline,
+  durationInFrames: number,
+  fps: number
+): CameraState[] => {
+  const { cinematic } = mapCamera;
+  const totalDistance = route.totalDistanceMeters;
+  const centerLead = getSmoothingWindow(totalDistance, cinematic.centerLead);
+  const bearingLead = getSmoothingWindow(totalDistance, cinematic.bearingLead);
+  const bearingWindow = getSmoothingWindow(
+    totalDistance,
+    cinematic.bearingWindow
+  );
+  const centerAlpha = halfLifeAlpha(cinematic.centerHalfLifeSeconds, fps);
+  const bearingAlpha = halfLifeAlpha(cinematic.bearingHalfLifeSeconds, fps);
+
+  const routeAsParsed: ParsedGpx = {
+    name: "stage",
+    coordinates: route.coordinates,
+    cumulativeDistances: route.cumulativeDistances,
+    totalDistanceMeters: route.totalDistanceMeters,
+    waypoints: [],
+  };
+
+  const states: CameraState[] = [];
+  let center = pointAtDistance(routeAsParsed, centerLead).point;
+  let bearing = getSmoothedBearing(
+    routeAsParsed,
+    bearingLead,
+    bearingWindow,
+    cinematic.bearingWindow.sampleCount
+  );
+
+  for (let frame = 0; frame < durationInFrames; frame++) {
+    const time = frame / fps;
+    const distance = getDistanceAtTime(timeline, time);
+    const trackerPoint = pointAtDistance(routeAsParsed, distance).point;
+    const targetCenter = pointAtDistance(
+      routeAsParsed,
+      distance + centerLead
+    ).point;
+    const targetBearing = getSmoothedBearing(
+      routeAsParsed,
+      distance + bearingLead,
+      bearingWindow,
+      cinematic.bearingWindow.sampleCount
+    );
+
+    if (frame === 0) {
+      center = targetCenter;
+      bearing = targetBearing;
+    } else {
+      center = lerpLonLat(center, targetCenter, centerAlpha);
+      bearing = lerpBearing(bearing, targetBearing, bearingAlpha);
+    }
+
+    states.push({ distance, center, bearing, trackerPoint });
+  }
+
+  return states;
+};
 
 const formatEsWaypointLabel = (
   rawName: string,
@@ -98,39 +230,12 @@ const findAdjacentEsNumber = (
   return undefined;
 };
 
-const getDisplayWaypoints = (
-  segment: Segment,
-  route: ParsedGpx
-): GpxWaypoint[] => {
-  if (segment.type !== "ES") {
-    return route.waypoints.map((waypoint) => {
-      if (waypoint.kind === "public-zone") return waypoint;
-      if (waypoint.kind === "start") {
-        const esNumber = findAdjacentEsNumber(segment, "next");
-        return {
-          ...waypoint,
-          name:
-            esNumber !== undefined
-              ? formatEsWaypointLabel(waypoint.name, esNumber)
-              : waypoint.name,
-        };
-      }
-      if (waypoint.kind === "finish") {
-        const esNumber = findAdjacentEsNumber(segment, "previous");
-        return {
-          ...waypoint,
-          name:
-            esNumber !== undefined
-              ? formatEsWaypointLabel(waypoint.name, esNumber)
-              : waypoint.name,
-        };
-      }
-      return { ...waypoint, kind: "standard" as const };
-    });
-  }
-
-  return route.waypoints.map((waypoint) => {
-    if (waypoint.kind === "public-zone") return waypoint;
+const decorateWaypointForSegment = (
+  waypoint: GpxWaypoint,
+  segment: Segment
+): GpxWaypoint => {
+  if (waypoint.kind === "public-zone") return waypoint;
+  if (segment.type === "ES") {
     if (waypoint.kind === "start" || waypoint.kind === "finish") {
       return {
         ...waypoint,
@@ -138,150 +243,164 @@ const getDisplayWaypoints = (
       };
     }
     return { ...waypoint, kind: "standard" as const };
-  });
+  }
+  if (waypoint.kind === "start") {
+    const esNumber = findAdjacentEsNumber(segment, "next");
+    return {
+      ...waypoint,
+      name:
+        esNumber !== undefined
+          ? formatEsWaypointLabel(waypoint.name, esNumber)
+          : waypoint.name,
+    };
+  }
+  if (waypoint.kind === "finish") {
+    const esNumber = findAdjacentEsNumber(segment, "previous");
+    return {
+      ...waypoint,
+      name:
+        esNumber !== undefined
+          ? formatEsWaypointLabel(waypoint.name, esNumber)
+          : waypoint.name,
+    };
+  }
+  return { ...waypoint, kind: "standard" as const };
 };
 
-const getProgress = (
-  frame: number,
-  durationInFrames: number,
-  fps: number
-) => {
-  const holdFrames = Math.min(
-    Math.round(mapCamera.segmentVideo.introOutroHoldSeconds * fps),
-    Math.floor(Math.max(0, durationInFrames - 1) / 2)
-  );
-  const activeFrames = Math.max(1, durationInFrames - holdFrames * 2);
-  const rawProgress = clamp((frame - holdFrames) / activeFrames, 0, 1);
-  return smoothStep(rawProgress);
+const CLUSTER_RADIUS_METERS = 80;
+
+const KIND_PRIORITY: Record<WaypointKind, number> = {
+  start: 4,
+  finish: 4,
+  "public-zone": 2,
+  standard: 1,
 };
+
+type WaypointVariant = {
+  decorated: GpxWaypoint;
+  segmentIndex: number;
+};
+
+type WaypointCluster = {
+  variants: WaypointVariant[];
+};
+
+const buildWaypointClusters = (route: StagedRoute): WaypointCluster[] => {
+  const clusters: WaypointCluster[] = [];
+  for (let i = 0; i < route.segmentRoutes.length; i++) {
+    const { segment, route: parsed } = route.segmentRoutes[i];
+    for (const wp of parsed.waypoints) {
+      const decorated = decorateWaypointForSegment(wp, segment);
+      const variant: WaypointVariant = { decorated, segmentIndex: i };
+      const existing = clusters.find((c) =>
+        c.variants.some(
+          (v) =>
+            distanceMeters(v.decorated.coordinates, decorated.coordinates) <=
+            CLUSTER_RADIUS_METERS
+        )
+      );
+      if (existing) {
+        existing.variants.push(variant);
+      } else {
+        clusters.push({ variants: [variant] });
+      }
+    }
+  }
+  return clusters;
+};
+
+const pickVariantForActiveSegment = (
+  cluster: WaypointCluster,
+  activeSegmentIndex: number
+): GpxWaypoint => {
+  const sorted = [...cluster.variants].sort((a, b) => {
+    // 1) Variante du segment actuellement parcouru en premier
+    const aActive = a.segmentIndex === activeSegmentIndex ? 0 : 1;
+    const bActive = b.segmentIndex === activeSegmentIndex ? 0 : 1;
+    if (aActive !== bActive) return aActive - bActive;
+    // 2) Sinon, préfère un segment à venir plutôt qu'un segment déjà passé
+    const aUpcoming = a.segmentIndex >= activeSegmentIndex ? 0 : 1;
+    const bUpcoming = b.segmentIndex >= activeSegmentIndex ? 0 : 1;
+    if (aUpcoming !== bUpcoming) return aUpcoming - bUpcoming;
+    // 3) Le plus proche en index gagne
+    const aDist = Math.abs(a.segmentIndex - activeSegmentIndex);
+    const bDist = Math.abs(b.segmentIndex - activeSegmentIndex);
+    if (aDist !== bDist) return aDist - bDist;
+    // 4) Priorité par type (start/finish > public-zone > standard)
+    return KIND_PRIORITY[b.decorated.kind] - KIND_PRIORITY[a.decorated.kind];
+  });
+  return sorted[0].decorated;
+};
+
+const buildActiveDisplayWaypoints = (
+  clusters: WaypointCluster[],
+  activeSegmentIndex: number
+): GpxWaypoint[] =>
+  clusters.map((c) => pickVariantForActiveSegment(c, activeSegmentIndex));
+
+const findActiveSegmentIndex = (
+  route: StagedRoute,
+  distance: number
+): number => {
+  for (let i = 0; i < route.segments.length; i++) {
+    if (distance <= route.segments[i].endDistance) return i;
+  }
+  return route.segments.length - 1;
+};
+
+const buildSegmentLineFeature = (
+  span: StagedSegmentSpan,
+  coordinates: LonLat[]
+): Feature<LineString> => ({
+  type: "Feature",
+  properties: {
+    segmentType: span.segment.type,
+    segmentId: span.segment.id,
+  },
+  geometry: { type: "LineString", coordinates },
+});
+
+// Nombre de segments précédents qu'on garde affichés pour préserver la
+// continuité aux transitions. Au-delà, on masque pour éviter qu'un trajet
+// déjà parcouru reste dessiné quand on repasse au même endroit (boucles).
+const VISIBLE_PAST_SEGMENTS = 1;
+
+const buildFullRouteFeatures = (
+  route: StagedRoute,
+  activeSegmentIndex: number
+): FeatureCollection<LineString> => ({
+  type: "FeatureCollection",
+  features: route.segments
+    .map((span, index) => ({ span, index }))
+    .filter(
+      ({ span, index }) =>
+        span.coordinates.length >= 2 &&
+        index >= activeSegmentIndex - VISIBLE_PAST_SEGMENTS
+    )
+    .map(({ span }) => buildSegmentLineFeature(span, span.coordinates)),
+});
+
+const buildProgressFeatures = (
+  route: StagedRoute,
+  distance: number,
+  activeSegmentIndex: number
+): FeatureCollection<LineString> => ({
+  type: "FeatureCollection",
+  features: route.segments
+    .map((span, index) => {
+      if (index < activeSegmentIndex - VISIBLE_PAST_SEGMENTS) return null;
+      const coords = spanCoordinatesUntilDistance(span, distance);
+      if (coords.length < 2) return null;
+      return buildSegmentLineFeature(span, coords);
+    })
+    .filter((feature): feature is Feature<LineString> => feature !== null),
+});
 
 const pointFeature = (coordinates: LonLat): Feature<Point> => ({
   type: "Feature",
   properties: {},
-  geometry: {
-    type: "Point",
-    coordinates,
-  },
+  geometry: { type: "Point", coordinates },
 });
-
-const lerpLonLat = (from: LonLat, to: LonLat, alpha: number): LonLat => [
-  from[0] + (to[0] - from[0]) * alpha,
-  from[1] + (to[1] - from[1]) * alpha,
-];
-
-const shortestAngleDelta = (from: number, to: number) =>
-  ((((to - from) % 360) + 540) % 360) - 180;
-
-const lerpBearing = (from: number, to: number, alpha: number) =>
-  (from + shortestAngleDelta(from, to) * alpha + 360) % 360;
-
-const halfLifeAlpha = (halfLifeSeconds: number, fps: number) => {
-  if (halfLifeSeconds <= 0) return 1;
-  return 1 - 2 ** (-1 / (halfLifeSeconds * fps));
-};
-
-const getSmoothingWindow = (
-  route: ParsedGpx,
-  config: {
-    minMeters: number;
-    maxMeters: number;
-    routeDistanceRatio: number;
-  }
-) =>
-  clamp(
-    route.totalDistanceMeters * config.routeDistanceRatio,
-    config.minMeters,
-    config.maxMeters
-  );
-
-const getOddSampleCount = (sampleCount: number) =>
-  Math.max(3, Math.ceil(sampleCount) | 1);
-
-const getSmoothedBearing = (
-  route: ParsedGpx,
-  distance: number,
-  windowMeters: number,
-  sampleCount: number
-) => {
-  const samples = getOddSampleCount(sampleCount);
-  let x = 0;
-  let y = 0;
-  let weightTotal = 0;
-
-  for (let index = 0; index < samples; index++) {
-    const progress = samples === 1 ? 0 : index / (samples - 1);
-    const centerDistance = distance - windowMeters + progress * windowMeters * 2;
-    const startDistance = centerDistance - windowMeters * 0.5;
-    const endDistance = centerDistance + windowMeters * 0.5;
-    const start = pointAtDistance(route, startDistance).point;
-    const end = pointAtDistance(route, endDistance).point;
-    if (distanceMeters(start, end) < 1) continue;
-
-    const bearing = (bearingDegrees(start, end) * Math.PI) / 180;
-    const weight = 1 - Math.abs(progress - 0.5) * 1.5;
-
-    x += Math.cos(bearing) * weight;
-    y += Math.sin(bearing) * weight;
-    weightTotal += weight;
-  }
-
-  if (weightTotal === 0) {
-    return pointAtDistance(route, distance).bearing;
-  }
-
-  return ((Math.atan2(y / weightTotal, x / weightTotal) * 180) / Math.PI + 360) % 360;
-};
-
-const buildCinematicCameraPath = (
-  route: ParsedGpx,
-  durationInFrames: number,
-  fps: number
-): CameraState[] => {
-  const { cinematic } = mapCamera;
-  const centerLead = getSmoothingWindow(route, cinematic.centerLead);
-  const bearingLead = getSmoothingWindow(route, cinematic.bearingLead);
-  const bearingWindow = getSmoothingWindow(route, cinematic.bearingWindow);
-  const centerAlpha = halfLifeAlpha(cinematic.centerHalfLifeSeconds, fps);
-  const bearingAlpha = halfLifeAlpha(cinematic.bearingHalfLifeSeconds, fps);
-  const states: CameraState[] = [];
-  let center = pointAtDistance(route, centerLead).point;
-  let bearing = getSmoothedBearing(
-    route,
-    bearingLead,
-    bearingWindow,
-    cinematic.bearingWindow.sampleCount
-  );
-
-  for (let frame = 0; frame < durationInFrames; frame++) {
-    const progress = getProgress(frame, durationInFrames, fps);
-    const distance = route.totalDistanceMeters * progress;
-    const trackerPoint = pointAtDistance(route, distance).point;
-    const targetCenter = pointAtDistance(route, distance + centerLead).point;
-    const targetBearing = getSmoothedBearing(
-      route,
-      distance + bearingLead,
-      bearingWindow,
-      cinematic.bearingWindow.sampleCount
-    );
-
-    if (frame === 0) {
-      center = targetCenter;
-      bearing = targetBearing;
-    } else {
-      center = lerpLonLat(center, targetCenter, centerAlpha);
-      bearing = lerpBearing(bearing, targetBearing, bearingAlpha);
-    }
-
-    states.push({
-      distance,
-      center,
-      bearing,
-      trackerPoint,
-    });
-  }
-
-  return states;
-};
 
 const loadMapImage = (
   map: mapboxgl.Map,
@@ -300,12 +419,10 @@ const loadMapImage = (
         reject(error);
         return;
       }
-
       if (!image) {
         reject(new Error(`Image Mapbox introuvable : ${imagePath}`));
         return;
       }
-
       map.addImage(imageId, image, { pixelRatio });
       resolve();
     });
@@ -322,27 +439,22 @@ const setGeoJsonData = (
 
 const addRouteLayers = (
   map: mapboxgl.Map,
-  route: ParsedGpx,
-  segment: Segment
+  route: StagedRoute,
+  clusters: WaypointCluster[]
 ) => {
-  const routeColor = getRouteColor(segment);
-  const displayWaypoints = getDisplayWaypoints(segment, route);
-  const fullRoute = routeFeature(route.coordinates);
-  const initialProgressRoute = routeFeature(
-    routeCoordinatesUntilDistance(route, 0)
-  );
+  const initialWaypoints = buildActiveDisplayWaypoints(clusters, 0);
 
   map.addSource(ROUTE_FULL_SOURCE, {
     type: "geojson",
-    data: fullRoute,
+    data: buildFullRouteFeatures(route, 0),
   });
   map.addSource(ROUTE_PROGRESS_SOURCE, {
     type: "geojson",
-    data: initialProgressRoute,
+    data: buildProgressFeatures(route, 0, 0),
   });
   map.addSource(WAYPOINT_SOURCE, {
     type: "geojson",
-    data: waypointCollection(displayWaypoints),
+    data: waypointCollection(initialWaypoints),
   });
   map.addSource(TRACKER_SOURCE, {
     type: "geojson",
@@ -363,14 +475,21 @@ const addRouteLayers = (
   ];
   const widthExpression = widthExpressionWithOffset(0);
 
+  const segmentColorMatch = [
+    "match",
+    ["get", "segmentType"],
+    "ES",
+    colors.orange,
+    "LIAISON",
+    colors.blue,
+    colors.blue,
+  ];
+
   map.addLayer({
     id: "route-full-outline",
     type: "line",
     source: ROUTE_FULL_SOURCE,
-    layout: {
-      "line-cap": "round",
-      "line-join": "round",
-    },
+    layout: { "line-cap": "round", "line-join": "round" },
     paint: {
       "line-color": mapRoute.outlineColor,
       "line-opacity": mapRoute.fullOutlineOpacity,
@@ -382,12 +501,9 @@ const addRouteLayers = (
     id: "route-full",
     type: "line",
     source: ROUTE_FULL_SOURCE,
-    layout: {
-      "line-cap": "round",
-      "line-join": "round",
-    },
+    layout: { "line-cap": "round", "line-join": "round" },
     paint: {
-      "line-color": routeColor,
+      "line-color": segmentColorMatch,
       "line-opacity": mapRoute.fullRouteOpacity,
       "line-width": widthExpression,
     },
@@ -397,14 +513,13 @@ const addRouteLayers = (
     id: "route-progress-outline",
     type: "line",
     source: ROUTE_PROGRESS_SOURCE,
-    layout: {
-      "line-cap": "round",
-      "line-join": "round",
-    },
+    layout: { "line-cap": "round", "line-join": "round" },
     paint: {
       "line-color": mapRoute.outlineColor,
       "line-opacity": mapRoute.progressOutlineOpacity,
-      "line-width": widthExpressionWithOffset(mapRoute.progressOutlineExtraWidth),
+      "line-width": widthExpressionWithOffset(
+        mapRoute.progressOutlineExtraWidth
+      ),
     },
   } as mapboxgl.LineLayerSpecification);
 
@@ -412,12 +527,9 @@ const addRouteLayers = (
     id: "route-progress",
     type: "line",
     source: ROUTE_PROGRESS_SOURCE,
-    layout: {
-      "line-cap": "round",
-      "line-join": "round",
-    },
+    layout: { "line-cap": "round", "line-join": "round" },
     paint: {
-      "line-color": routeColor,
+      "line-color": segmentColorMatch,
       "line-opacity": 1,
       "line-width": widthExpression,
     },
@@ -448,7 +560,7 @@ const addRouteLayers = (
     type: "circle",
     source: TRACKER_SOURCE,
     paint: {
-      "circle-color": routeColor,
+      "circle-color": colors.orange,
       "circle-radius": [
         "interpolate",
         ["linear"],
@@ -522,15 +634,23 @@ const addRouteLayers = (
 
 const updateMapFrame = (
   map: mapboxgl.Map,
-  route: ParsedGpx,
-  segment: Segment,
-  cameraState: CameraState
+  route: StagedRoute,
+  cameraState: CameraState,
+  clusters: WaypointCluster[],
+  lastActiveSegmentIndexRef: { current: number }
 ) => {
+  const activeSegmentIndex = findActiveSegmentIndex(route, cameraState.distance);
+  const activeSpan = route.segments[activeSegmentIndex];
+  const pitch =
+    activeSpan.segment.type === "ES"
+      ? mapCamera.pitch.es
+      : mapCamera.pitch.liaison;
+
   map.jumpTo({
     center: cameraState.center,
     zoom: mapCamera.zoom,
     bearing: cameraState.bearing,
-    pitch: getPitch(segment),
+    pitch,
     padding: {
       top: mapCamera.padding.top,
       bottom: mapCamera.padding.bottom,
@@ -543,9 +663,25 @@ const updateMapFrame = (
   setGeoJsonData(
     map,
     ROUTE_PROGRESS_SOURCE,
-    routeFeature(routeCoordinatesUntilDistance(route, cameraState.distance))
+    buildProgressFeatures(route, cameraState.distance, activeSegmentIndex)
   );
   setGeoJsonData(map, TRACKER_SOURCE, pointFeature(cameraState.trackerPoint));
+
+  if (lastActiveSegmentIndexRef.current !== activeSegmentIndex) {
+    lastActiveSegmentIndexRef.current = activeSegmentIndex;
+    setGeoJsonData(
+      map,
+      ROUTE_FULL_SOURCE,
+      buildFullRouteFeatures(route, activeSegmentIndex)
+    );
+    setGeoJsonData(
+      map,
+      WAYPOINT_SOURCE,
+      waypointCollection(
+        buildActiveDisplayWaypoints(clusters, activeSegmentIndex)
+      )
+    );
+  }
 };
 
 const MapFallback: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -567,20 +703,24 @@ const MapFallback: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </AbsoluteFill>
 );
 
-export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
+export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
+  route,
+  timeline,
+}) => {
   const frame = useCurrentFrame();
   const { durationInFrames, fps } = useVideoConfig();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const routeRef = useRef<ParsedGpx | null>(null);
   const cameraPathRef = useRef<CameraState[]>([]);
+  const lastActiveSegmentIndexRef = useRef<number>(-1);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const waypointClusters = useMemo(() => buildWaypointClusters(route), [route]);
+
   useEffect(() => {
     const token = process.env.REMOTION_MAPBOX_TOKEN;
-    const style =
-      process.env.REMOTION_MAPBOX_STYLE ?? mapCamera.defaultStyle;
+    const style = process.env.REMOTION_MAPBOX_STYLE ?? mapCamera.defaultStyle;
 
     if (!token) {
       setError("Token Mapbox manquant : renseigne REMOTION_MAPBOX_TOKEN.");
@@ -591,7 +731,7 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
 
     let cancelled = false;
     let completed = false;
-    const handle = delayRender(`Chargement carte ${segment.id}`, {
+    const handle = delayRender(`Chargement carte étape`, {
       timeoutInMilliseconds: mapCamera.renderTimeouts.loadMapMs,
     });
 
@@ -609,15 +749,9 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
 
     const setup = async () => {
       try {
-        const response = await fetch(staticFile(gpxPath));
-        if (!response.ok) {
-          throw new Error(`GPX introuvable : ${gpxPath}`);
-        }
-
-        const route = parseGpx(await response.text());
-        routeRef.current = route;
-        const cameraPath = buildCinematicCameraPath(
+        const cameraPath = buildContinuousCameraPath(
           route,
+          timeline,
           durationInFrames,
           fps
         );
@@ -625,13 +759,17 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
         mapboxgl.accessToken = token;
 
         const start = cameraPath[0];
+        const startSpan = findActiveSegmentSpan(route, start.distance);
         const map = new mapboxgl.Map({
           container: containerRef.current as HTMLDivElement,
           style,
           center: start.center,
           zoom: mapCamera.zoom,
           bearing: start.bearing,
-          pitch: getPitch(segment),
+          pitch:
+            startSpan.segment.type === "ES"
+              ? mapCamera.pitch.es
+              : mapCamera.pitch.liaison,
           interactive: false,
           preserveDrawingBuffer: true,
         });
@@ -649,8 +787,15 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
               loadMapImage(map, PIN_PUBLIC_ZONE, mapPins.publicZonePath, 2),
             ]);
 
-            addRouteLayers(map, route, segment);
-            updateMapFrame(map, route, segment, start);
+            lastActiveSegmentIndexRef.current = -1;
+            addRouteLayers(map, route, waypointClusters);
+            updateMapFrame(
+              map,
+              route,
+              start,
+              waypointClusters,
+              lastActiveSegmentIndexRef
+            );
 
             map.once("idle", () => {
               if (cancelled) return;
@@ -680,19 +825,18 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
       mapRef.current = null;
       cameraPathRef.current = [];
     };
-  }, [durationInFrames, fps, gpxPath, segment]);
+  }, [durationInFrames, fps, route, timeline, waypointClusters]);
 
   useEffect(() => {
     const map = mapRef.current;
-    const route = routeRef.current;
-    if (!isReady || !map || !route) return;
+    if (!isReady || !map) return;
     const cameraPath = cameraPathRef.current;
     const cameraState =
       cameraPath[Math.min(frame, cameraPath.length - 1)] ?? cameraPath[0];
     if (!cameraState) return;
 
     let done = false;
-    const handle = delayRender(`Frame carte ${segment.id}:${frame}`, {
+    const handle = delayRender(`Frame étape:${frame}`, {
       timeoutInMilliseconds: mapCamera.renderTimeouts.frameMs,
     });
     const complete = () => {
@@ -702,7 +846,13 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
     };
 
     map.once("render", complete);
-    updateMapFrame(map, route, segment, cameraState);
+    updateMapFrame(
+      map,
+      route,
+      cameraState,
+      waypointClusters,
+      lastActiveSegmentIndexRef
+    );
     map.triggerRepaint();
 
     const timeout = window.setTimeout(
@@ -715,7 +865,7 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
       map.off("render", complete);
       complete();
     };
-  }, [frame, isReady, segment]);
+  }, [frame, isReady, route, waypointClusters]);
 
   if (error) {
     return <MapFallback>{error}</MapFallback>;
@@ -723,13 +873,7 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#07111f" }}>
-      <div
-        ref={containerRef}
-        style={{
-          width: "100%",
-          height: "100%",
-        }}
-      />
+      <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
       <AbsoluteFill
         style={{
           pointerEvents: "none",

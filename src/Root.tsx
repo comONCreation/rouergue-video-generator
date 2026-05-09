@@ -2,7 +2,12 @@ import React from "react";
 import { Composition } from "remotion";
 import { SegmentMapVideo } from "./SegmentMapVideo";
 import { SegmentOverlay } from "./SegmentOverlay";
-import { SEGMENTS, computeSegmentDurationSeconds } from "./data/segments";
+import { FullStageVideo } from "./FullRallyVideo";
+import {
+  SEGMENTS,
+  computeSegmentDurationSeconds,
+  computeStageContinuousDurationSeconds,
+} from "./data/segments";
 import { layout } from "./theme";
 
 export const Root: React.FC = () => {
@@ -44,6 +49,28 @@ export const Root: React.FC = () => {
           />
         );
       })}
+      <Composition
+        id="FULL-S1"
+        component={FullStageVideo}
+        width={layout.width}
+        height={layout.height}
+        fps={layout.fps}
+        durationInFrames={Math.round(
+          computeStageContinuousDurationSeconds(1) * layout.fps
+        )}
+        defaultProps={{ stage: 1 as const }}
+      />
+      <Composition
+        id="FULL-S2"
+        component={FullStageVideo}
+        width={layout.width}
+        height={layout.height}
+        fps={layout.fps}
+        durationInFrames={Math.round(
+          computeStageContinuousDurationSeconds(2) * layout.fps
+        )}
+        defaultProps={{ stage: 2 as const }}
+      />
     </>
   );
 };
