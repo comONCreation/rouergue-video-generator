@@ -23,9 +23,8 @@ npm install
 npm run dev
 ```
 
-Ouvre le studio. Sélectionner la composition `overlay` puis changer
-`segmentId` dans les *defaultProps* pour tester chaque segment, ou bien
-sélectionner directement la composition portant l'ID du segment (ex. `S1-ES1`).
+Ouvre le studio. Chaque segment a sa propre composition (ex. `S1-ES1`,
+`S1-L02`, `S2-ES15`) — il suffit de la sélectionner dans la liste.
 
 ### 2. Rendre un seul segment (itération rapide)
 

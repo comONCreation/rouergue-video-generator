@@ -85,7 +85,15 @@ export const SegmentBlock: React.FC<{ segment: Segment }> = ({ segment }) => {
       )}
 
       {/* Stats */}
-      <div style={{ display: "flex", gap: 22, marginTop: 6, flexWrap: "wrap" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          gap: 22,
+          marginTop: 6,
+          flexWrap: "wrap",
+        }}
+      >
         <Stat
           label="Distance"
           value={formatKm(segment.distanceKm)}
@@ -127,7 +135,7 @@ const Stat: React.FC<{
       style={{
         fontFamily: fonts.display,
         fontWeight: 800,
-        fontSize: accent ? 28 : 24,
+        fontSize: 24,
         color: accent ? colors.orange : colors.white,
         lineHeight: 1,
       }}
@@ -138,7 +146,6 @@ const Stat: React.FC<{
           style={{
             fontWeight: 600,
             fontSize: 14,
-            color: colors.whiteSubtle,
             marginLeft: 4,
           }}
         >

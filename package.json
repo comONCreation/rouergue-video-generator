@@ -10,17 +10,17 @@
     "render:one": "tsx scripts/render-one.ts"
   },
   "dependencies": {
-    "@remotion/bundler": "4.0.404",
-    "@remotion/cli": "4.0.404",
-    "@remotion/google-fonts": "4.0.404",
-    "@remotion/renderer": "4.0.404",
+    "@remotion/bundler": "4.0.459",
+    "@remotion/cli": "4.0.459",
+    "@remotion/google-fonts": "4.0.459",
+    "@remotion/renderer": "4.0.459",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "remotion": "4.0.404"
+    "remotion": "4.0.459"
   },
   "devDependencies": {
-    "@types/react": "19.2.2",
     "@types/node": "24.7.1",
+    "@types/react": "19.2.2",
     "tsx": "4.20.6",
     "typescript": "5.9.3"
   }

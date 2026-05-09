@@ -8,22 +8,10 @@ import { layout } from "./theme";
 const DEFAULT_DURATION_SECONDS = 30;
 
 export const Root: React.FC = () => {
+  // Une composition par segment pour rendu en lot.
+  // ID = identifiant du segment (ex. S1-ES1).
   return (
     <>
-      {/* Composition générique paramétrée — utile pour tester n'importe quel
-          segment depuis Remotion Studio en changeant defaultProps. */}
-      <Composition
-        id="overlay"
-        component={SegmentOverlay}
-        width={layout.width}
-        height={layout.height}
-        fps={layout.fps}
-        durationInFrames={DEFAULT_DURATION_SECONDS * layout.fps}
-        defaultProps={{ segmentId: SEGMENTS[0].id }}
-      />
-
-      {/* Une composition par segment pour rendu en lot.
-          ID = identifiant du segment (ex. S1-ES1). */}
       {SEGMENTS.map((segment) => (
         <Composition
           key={segment.id}
