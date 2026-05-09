@@ -1,11 +1,10 @@
 /**
- * Rend tous les segments en ProRes 4444 avec canal alpha (.mov).
+ * Rend tous les segments en ProRes HQ (.mov).
  *
  * Usage :
  *   npm run render:all
  *   npm run render:all -- --duration 45      (durée par défaut en secondes)
  *   npm run render:all -- --only S1-ES1,S2-ES15
- *   npm run render:all -- --overlay          (ancien mode alpha uniquement)
  *
  * Pour gérer des durées par segment, créer un fichier `durations.json` à la racine :
  *   { "S1-ES1": 18, "S1-L01": 60, ... }
@@ -36,14 +35,12 @@ if (fs.existsSync(ENV_FILE)) {
 type Args = {
   duration: number | null;
   only: string[] | null;
-  overlayOnly: boolean;
 };
 
 const parseArgs = (): Args => {
   const args = process.argv.slice(2);
   let duration: number | null = null;
   let only: string[] | null = null;
-  let overlayOnly = false;
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--duration" && args[i + 1]) {
       duration = Number(args[i + 1]);
@@ -51,11 +48,9 @@ const parseArgs = (): Args => {
     } else if (args[i] === "--only" && args[i + 1]) {
       only = args[i + 1].split(",").map((s) => s.trim());
       i++;
-    } else if (args[i] === "--overlay") {
-      overlayOnly = true;
     }
   }
-  return { duration, only, overlayOnly };
+  return { duration, only };
 };
 
 const loadCustomDurations = (): Record<string, number> => {
@@ -68,32 +63,20 @@ const loadCustomDurations = (): Record<string, number> => {
   }
 };
 
-const safeFilename = (
-  segment: Segment,
-  index: number,
-  overlayOnly: boolean
-) => {
-  const slug = segment.toLocation
-    ? segment.toLocation
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/\p{Diacritic}/gu, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "")
-    : segment.title
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/\p{Diacritic}/gu, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
+const safeFilename = (segment: Segment, index: number) => {
+  const base = segment.toLocation ?? segment.title;
+  const slug = base
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
   const idx = String(index + 1).padStart(2, "0");
-  return `${segment.stage}-${idx}-${segment.id}-${slug}${
-    overlayOnly ? "-overlay.mov" : ".mov"
-  }`;
+  return `${segment.stage}-${idx}-${segment.id}-${slug}.mov`;
 };
 
 const main = async () => {
-  const { duration: defaultDuration, only, overlayOnly } = parseArgs();
+  const { duration: defaultDuration, only } = parseArgs();
   const customDurations = loadCustomDurations();
   const envVariables = Object.fromEntries(
     Object.entries(process.env).filter(
@@ -132,33 +115,25 @@ const main = async () => {
       `[${i + 1}/${targets.length}] ${seg.id} — ${seg.title} (${segmentDuration}s)`
     );
 
-    const compositionId = overlayOnly ? `OVERLAY-${seg.id}` : seg.id;
     const composition = await selectComposition({
       serveUrl: bundled,
-      id: compositionId,
+      id: seg.id,
       envVariables,
       chromiumOptions: { gl: "angle" },
     });
 
-    // Override de la durée pour matcher la vidéo AvoMap
     const composedWithDuration = {
       ...composition,
       durationInFrames: Math.round(segmentDuration * composition.fps),
     };
 
-    const outputPath = path.join(OUT_DIR, safeFilename(seg, i, overlayOnly));
+    const outputPath = path.join(OUT_DIR, safeFilename(seg, i));
 
     await renderMedia({
       composition: composedWithDuration,
       serveUrl: bundled,
       codec: "prores",
-      proResProfile: overlayOnly ? ("4444" as const) : ("hq" as const),
-      ...(overlayOnly
-        ? {
-            // Alpha activé via la transparence du composition (backgroundColor: transparent)
-            pixelFormat: "yuva444p10le" as const,
-          }
-        : {}),
+      proResProfile: "hq",
       imageFormat: "png",
       envVariables,
       chromiumOptions: { gl: "angle" },

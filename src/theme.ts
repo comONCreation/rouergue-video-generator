@@ -1,4 +1,5 @@
-// Charte graphique Rallye Aveyron Rouergue Occitanie
+// Charte graphique et constantes de rendu.
+// Identité du rallye en cours : voir src/rally.config.ts.
 export const colors = {
   blue: "#0F5699",
   blueDark: "#0A3C70",
@@ -32,7 +33,6 @@ export const layout = {
 };
 
 export const mapCamera = {
-  defaultStyle: "mapbox://styles/comoncreation/cmoyoojin000r01sfep4hdvb9",
   zoom: 14,
   pitch: {
     es: 50,
@@ -64,7 +64,7 @@ export const mapCamera = {
     },
     bearingHalfLifeSeconds: 2.2,
   },
-  // Vidéos par segment unitaire (S1-ES1, OVERLAY-S1-L01, …).
+  // Vidéos par segment unitaire (S1-ES1, S1-L02, …).
   segmentVideo: {
     // Caméra immobile pendant cette durée au tout début (intro) ET à la fin
     // (outro) de chaque vidéo de segment, pour laisser l'overlay s'animer.
@@ -105,6 +105,22 @@ export const mapRoute = {
     lowZoom: 10, lowWidth: 4,
     midZoom: 13, midWidth: 7,
     highZoom: 16, highWidth: 12,
+  },
+  // Seuils utilisés par la route fusionnée (étape complète).
+  // - dedupeMeters : tolérance pour confondre deux trkpt consécutifs lors
+  //   du merge des GPX.
+  // - clusterRadiusMeters : rayon dans lequel deux waypoints sont
+  //   considérés comme le même lieu (1 seul pin affiché).
+  // - coincidentKeyPointsMeters : deux key points plus proches que ça sont
+  //   fusionnés en un seul hold caméra.
+  // - visiblePastSegments : nombre de segments précédents qui restent
+  //   visibles sur la carte ; au-delà, le tracé passé disparaît pour
+  //   éviter la superposition sur les boucles.
+  thresholds: {
+    dedupeMeters: 0.5,
+    clusterRadiusMeters: 80,
+    coincidentKeyPointsMeters: 100,
+    visiblePastSegments: 1,
   },
   tracker: {
     haloColor: "rgba(255, 255, 255, 0.88)",

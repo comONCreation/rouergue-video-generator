@@ -4,7 +4,6 @@
  * Usage :
  *   npm run render:one -- S1-ES1
  *   npm run render:one -- S1-ES1 --duration 12
- *   npm run render:one -- S1-ES1 --overlay
  */
 import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
@@ -40,7 +39,6 @@ const main = async () => {
   let duration = computeSegmentDurationSeconds(seg);
   const dIdx = args.indexOf("--duration");
   if (dIdx >= 0 && args[dIdx + 1]) duration = Number(args[dIdx + 1]);
-  const overlayOnly = args.includes("--overlay");
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
@@ -50,7 +48,6 @@ const main = async () => {
     webpackOverride: (c) => c,
   });
 
-  const compositionId = overlayOnly ? `OVERLAY-${seg.id}` : seg.id;
   const envVariables = Object.fromEntries(
     Object.entries(process.env).filter(
       (entry): entry is [string, string] =>
@@ -60,19 +57,14 @@ const main = async () => {
 
   const composition = await selectComposition({
     serveUrl: bundled,
-    id: compositionId,
+    id: seg.id,
     envVariables,
     chromiumOptions: { gl: "angle" },
   });
 
-  const outputPath = path.join(
-    OUT_DIR,
-    overlayOnly ? `${seg.id}-overlay.mov` : `${seg.id}.mov`
-  );
+  const outputPath = path.join(OUT_DIR, `${seg.id}.mov`);
 
-  console.log(
-    `🎬 Rendu ${compositionId} (${duration}s) → ${outputPath}`
-  );
+  console.log(`🎬 Rendu ${seg.id} (${duration}s) → ${outputPath}`);
 
   await renderMedia({
     composition: {
@@ -81,10 +73,7 @@ const main = async () => {
     },
     serveUrl: bundled,
     codec: "prores",
-    proResProfile: overlayOnly ? ("4444" as const) : ("hq" as const),
-    ...(overlayOnly
-      ? { pixelFormat: "yuva444p10le" as const }
-      : {}),
+    proResProfile: "hq",
     imageFormat: "png",
     envVariables,
     chromiumOptions: { gl: "angle" },

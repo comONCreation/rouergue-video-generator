@@ -4,7 +4,7 @@ import {
   type LonLat,
 } from "./gpx";
 import type { Segment } from "./data/segments";
-import { mapCamera } from "./theme";
+import { mapCamera, mapRoute } from "./theme";
 import type { StagedRoute, StagedSegmentSpan } from "./stagedRoute";
 
 export type KeyPointType =
@@ -46,7 +46,6 @@ export type StageTimeline = {
   totalSeconds: number;
 };
 
-const COINCIDENT_THRESHOLD_METERS = 100;
 const TYPE_PRIORITY: Record<KeyPointType, number> = {
   "stage-start": 5,
   "stage-finish": 5,
@@ -56,23 +55,20 @@ const TYPE_PRIORITY: Record<KeyPointType, number> = {
   regrouping: 3,
 };
 
-const holdSecondsForType = (type: KeyPointType): number => {
-  const holds = mapCamera.stageVideo.keyPointHolds;
-  switch (type) {
-    case "stage-start":
-      return holds.stageStart;
-    case "stage-finish":
-      return holds.stageFinish;
-    case "es-start":
-      return holds.esStart;
-    case "es-finish":
-      return holds.esFinish;
-    case "assistance":
-      return holds.assistance;
-    case "regrouping":
-      return holds.regrouping;
-  }
+const HOLD_KEY_BY_TYPE: Record<
+  KeyPointType,
+  keyof typeof mapCamera.stageVideo.keyPointHolds
+> = {
+  "stage-start": "stageStart",
+  "stage-finish": "stageFinish",
+  "es-start": "esStart",
+  "es-finish": "esFinish",
+  assistance: "assistance",
+  regrouping: "regrouping",
 };
+
+const holdSecondsForType = (type: KeyPointType): number =>
+  mapCamera.stageVideo.keyPointHolds[HOLD_KEY_BY_TYPE[type]];
 
 const findDistanceForCoordinateInSpan = (
   route: StagedRoute,
@@ -92,10 +88,7 @@ const findDistanceForCoordinateInSpan = (
   return route.cumulativeDistances[bestIndex];
 };
 
-const classifyKeyPoint = (
-  waypoint: GpxWaypoint,
-  _segment: Segment
-): KeyPointType | null => {
+const classifyKeyPoint = (waypoint: GpxWaypoint): KeyPointType | null => {
   // Les ZP ne déclenchent pas d'arrêt — affichées uniquement comme pins sur la
   // carte, sans pause de la caméra ni overlay.
   if (waypoint.kind === "public-zone") return null;
@@ -181,7 +174,7 @@ export const buildStageTimeline = (route: StagedRoute): StageTimeline => {
     const span = route.segments[i];
     if (!span) continue;
     for (const waypoint of parsed.waypoints) {
-      const type = classifyKeyPoint(waypoint, segment);
+      const type = classifyKeyPoint(waypoint);
       if (!type) continue;
       const distance = findDistanceForCoordinateInSpan(
         route,
@@ -217,7 +210,11 @@ export const buildStageTimeline = (route: StagedRoute): StageTimeline => {
   const keyPoints: StageKeyPoint[] = [];
   for (const kp of collected) {
     const prev = keyPoints[keyPoints.length - 1];
-    if (prev && Math.abs(kp.distance - prev.distance) < COINCIDENT_THRESHOLD_METERS) {
+    if (
+      prev &&
+      Math.abs(kp.distance - prev.distance) <
+        mapRoute.thresholds.coincidentKeyPointsMeters
+    ) {
       // À distance ~égale, le doublon vient typiquement des waypoints
       // partagés à la jonction de deux GPX consécutifs (fin du segment N
       // = début du segment N+1). On garde la version associée au segment
@@ -245,11 +242,11 @@ export const buildStageTimeline = (route: StagedRoute): StageTimeline => {
 
     if (i < keyPoints.length - 1) {
       const next = keyPoints[i + 1];
-      const distanceMeters_ = Math.max(0, next.distance - kp.distance);
+      const gapMeters = Math.max(0, next.distance - kp.distance);
       const speedKmh = computeTransitSpeedKmh(route, kp.distance, next.distance);
       const transitSeconds = Math.max(
         0.2,
-        (distanceMeters_ / 1000 / speedKmh) * 3600
+        (gapMeters / 1000 / speedKmh) * 3600
       );
       phases.push({
         kind: "transit",

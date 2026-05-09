@@ -1,14 +1,24 @@
-# Videos Rallye Aveyron Rouergue Occitanie 2026
+# Vidéos Rallye Aveyron Rouergue Occitanie 2026
 
-Génération de vidéos complètes Mapbox + overlay pour chaque liaison et spéciale.
-L'ancien rendu alpha seul reste disponible pour une incrustation dans Final Cut Pro.
+Génération vidéo du tracé du 52ᵉ Rallye Aveyron Rouergue Occitanie. Trois
+livrables :
+
+- **Vidéos par segment** — une par ES et par liaison (`S1-ES1`, `S1-L02`,
+  `S2-ES15`, …) avec carte Mapbox, tracé GPX et panneau d'information.
+- **Vidéo continue par étape** — `FULL-S1` (Étape 1) et `FULL-S2` (Étape 2)
+  enchaînent toute l'étape sans coupure : caméra cinématique qui suit la
+  trace, holds aux key points (départ/arrivée d'étape, départ/arrivée
+  d'ES, assistance, regroupement) et overlay qui se met à jour à chaque
+  segment traversé.
+- **Studio Remotion** — prévisualisation interactive de toutes les
+  compositions avec timeline.
 
 ## Stack
 
-- Remotion 4 + React 19 + TypeScript
+- Remotion 4.0 + React 19 + TypeScript 5
 - Mapbox GL JS pour les fonds de carte et la caméra animée
-- Police : Montserrat (via `@remotion/google-fonts`)
-- Format : 1920×1080 @ 60 fps
+- Police Montserrat (`@remotion/google-fonts`)
+- Sortie : 1920×1080 @ 60 fps, ProRes HQ (`.mov`)
 
 ## Installation
 
@@ -16,13 +26,13 @@ L'ancien rendu alpha seul reste disponible pour une incrustation dans Final Cut 
 npm install
 ```
 
-Créer ensuite un fichier `.env` avec le token Mapbox :
+Créer un fichier `.env` à la racine avec le token Mapbox :
 
 ```bash
 REMOTION_MAPBOX_TOKEN=pk...
 ```
 
-Optionnel :
+Optionnel (style Mapbox custom, sinon `outdoors-v12` par défaut) :
 
 ```bash
 REMOTION_MAPBOX_STYLE=mapbox://styles/mapbox/outdoors-v12
@@ -30,77 +40,136 @@ REMOTION_MAPBOX_STYLE=mapbox://styles/mapbox/outdoors-v12
 
 ## Workflow
 
-### 1. Prévisualiser dans le studio Remotion
+### Prévisualisation dans le studio Remotion
 
 ```bash
 npm run dev
 ```
 
-Ouvre le studio. Chaque segment a sa propre composition (ex. `S1-ES1`,
-`S1-L02`, `S2-ES15`) avec carte Mapbox, tracé GPX et overlay.
-Les compositions `OVERLAY-S1-ES1`, etc. gardent l'ancien mode fond transparent.
+Ouvre le studio. Toutes les compositions (par segment et par étape) y sont
+listées et scrubbables.
 
-### 2. Rendre un seul segment (itération rapide)
+### Rendu d'une étape complète (continue, sans coupure)
+
+```bash
+npm run render -- FULL-S1 out/etape-1.mov
+npm run render -- FULL-S2 out/etape-2.mov
+```
+
+La durée est calculée automatiquement à partir des distances et des vitesses
+caméra définies dans `theme.ts` (`mapCamera.cameraSpeed.es` / `.liaison`).
+
+### Rendu d'un segment unitaire (itération rapide)
 
 ```bash
 npm run render:one -- S1-ES1
 npm run render:one -- S1-ES1 --duration 15
-npm run render:one -- S1-ES1 --overlay
 ```
 
-### 3. Rendre tous les segments en lot
+### Rendu en lot de tous les segments
 
 ```bash
 npm run render:all
 npm run render:all -- --duration 45
 npm run render:all -- --only S1-ES1,S2-ES15
-npm run render:all -- --overlay
 ```
 
-Sortie dans `out/` au format `.mp4` pour les vidéos complètes. Le mode
-`--overlay` sort des `.mov` ProRes 4444 avec canal alpha.
+Sortie dans `out/`.
 
-### 4. Durées personnalisées par segment
+### Durées personnalisées par segment
 
-Créer un fichier `durations.json` à la racine pour matcher la durée de chaque
-clip au seconde près :
+Créer un `durations.json` à la racine pour fixer la durée de chaque clip
+au seconde près (utilisé par `render:all` et `render:one`) :
 
 ```json
 {
   "S1-L01": 65,
   "S1-L02": 80,
-  "S1-ES1": 18,
-  "S1-L03": 30
+  "S1-ES1": 18
 }
 ```
 
-`render-all.ts` lit ce fichier s'il existe et applique la durée par segment ;
-les segments absents utilisent la durée par défaut (`--duration` ou 30s).
+Les segments absents utilisent la durée calculée (`computeSegmentDurationSeconds`)
+ou la valeur fournie via `--duration`.
+
+## Comment ça marche (étape continue)
+
+L'étape complète est construite à la volée dans le studio :
+
+1. **Fusion des GPX** — `loadStagedRoute` charge en parallèle tous les GPX
+   de l'étape, déduplique les points coïncidents aux jonctions et produit
+   une route continue avec les distances cumulées.
+2. **Timeline caméra** — `buildStageTimeline` extrait les key points
+   (départ/arrivée d'étape, ES, assistance, regroupement) et planifie
+   l'alternance hold (caméra immobile) ↔ transit (caméra qui suit la
+   trace), avec vitesse différenciée ES vs liaison.
+3. **Caméra cinématique** — center + bearing avancent en lookahead,
+   lissés avec un filtre half-life pour éviter les soubresauts dans les
+   épingles serrées.
+4. **Tracé adaptatif** — au-delà de quelques segments parcourus, le tracé
+   passé disparaît de la carte, ce qui évite la superposition visuelle
+   quand l'étape reboucle sur les mêmes routes (typique des boucles
+   Espalion / La Primaube).
+5. **Pins waypoints dynamiques** — un même lieu (ex. parc fermé Bourran)
+   apparaît dans plusieurs GPX consécutifs ; un clustering par proximité
+   produit un seul pin, dont le libellé change selon le segment courant
+   ("Arrivée Liaison" → "Départ ES…").
+6. **Overlay segment** — l'overlay (panneau gauche + bandeau compact)
+   rejoue son animation à chaque entrée d'un nouveau segment, ce qui
+   permet aux boucles de ré-afficher l'info.
+
+Tous les paramètres (vitesses caméra, durées des holds, lissage,
+zoom/pitch, géométrie du tracé) sont dans [`src/theme.ts`](src/theme.ts) :
+
+- `mapCamera.segmentVideo.introOutroHoldSeconds` — hold de la caméra au
+  début et à la fin des **vidéos par segment**.
+- `mapCamera.stageVideo.keyPointHolds` — durées des holds aux key points
+  sur les **vidéos d'étape continue**.
+- `mapCamera.cameraSpeed.{es,liaison}` — vitesse de la caméra en transit.
+- `mapCamera.cinematic.*` — paramètres de lissage center/bearing.
 
 ## Structure
 
 ```
 src/
-  data/gpxFiles.ts     → correspondance segment → fichier GPX
-  data/segments.ts     → données extraites du Road Book (TIMING R26.pdf)
-  components/          → carte Mapbox + blocs du panneau gauche
-  gpx.ts               → parsing GPX + helpers de progression caméra
-  theme.ts             → couleurs charte + dimensions
-  SegmentMapVideo.tsx  → composition carte + overlay
-  SegmentOverlay.tsx   → overlay alpha historique
-  Root.tsx             → enregistrement Remotion
+  Root.tsx               → enregistrement des compositions Remotion
+  SegmentMapVideo.tsx    → composition par segment (carte + overlay)
+  FullRallyVideo.tsx     → composition continue par étape (FULL-S1/S2)
+  SegmentOverlay.tsx     → panneau overlay (réutilisé par les deux)
+  stagedRoute.ts         → fusion des GPX en route continue
+  stageTimeline.ts       → timeline caméra (holds + transits)
+  cameraPath.ts          → helpers caméra/bearing partagés
+  gpx.ts                 → parsing GPX + helpers de progression
+  theme.ts               → couleurs, dimensions, paramètres caméra
+  typography.ts          → styles de texte centralisés
+  format.ts              → formatage km / temps
+  data/
+    segments.ts          → métadonnées des segments (Road Book TIMING R26)
+    gpxFiles.ts          → segment → fichier GPX
+  components/
+    RallyMap.tsx         → carte Mapbox pour un segment
+    ContinuousStageMap.tsx → carte Mapbox pour une étape continue
+    MapFallback.tsx      → écran d'erreur partagé
+    LeftPanel.tsx        → panneau d'info principal
+    CompactPanel.tsx     → bandeau compact (après minimisation)
+    StageIndicator.tsx   → en-tête étape/section
+    SegmentBlock.tsx     → bloc d'info segment
+    StageProgress.tsx    → barre de progression d'étape
+    Logo.tsx             → logo du rallye
 scripts/
-  render-one.ts        → rendu d'un segment unique
-  render-all.ts        → rendu en lot
-public/GPX/            → traces et points GPX
-out/                   → vidéos générées
+  render-one.ts          → rendu d'un segment unique
+  render-all.ts          → rendu en lot
+public/
+  GPX/                   → traces et points GPX par étape
+  markers/               → pins (départ/arrivée/zone publique)
+  logo.png
+out/                     → vidéos générées
 ```
 
-## Charte respectée
+## Charte
 
 - Bleu : `#0F5699` · Orange : `#F59E20`
 - Liaisons : tracé bleu
 - Spéciales : tracé orange
-- Pins GPX : départ, arrivée et zones publiques depuis `public/Drapeaux/`
-- Logo : fallback SVG (volant + cornes + "52") — à remplacer par le vrai logo
-  dans `src/components/Logo.tsx` quand le SVG sera disponible.
+- Pins GPX : départ / arrivée / zone publique (`public/markers/`)
+- Logo : `public/logo.png` (fallback SVG dans `Logo.tsx`)

@@ -1,15 +1,12 @@
-// Données extraites du Road Book "TIMING R26.pdf"
-// 52e Rallye Aveyron Rouergue Occitanie — 10 & 11 juillet 2026
+// Données extraites du Road Book de l'édition courante.
+// Identité du rallye (édition, dates, nom) : src/rally.config.ts.
 import { mapCamera } from "../theme";
+import { RALLY } from "../rally.config";
+import { validateSegments } from "./validateSegments";
 
-export const RALLY_NAME = "52e Rallye Aveyron Rouergue Occitanie";
-export const STAGE_1_DATE = "Vendredi 10 juillet 2026";
-export const STAGE_2_DATE = "Samedi 11 juillet 2026";
-
-export const STAGE_1_TOTAL_KM = 348.521;
-export const STAGE_2_TOTAL_KM = 279.133;
-export const RALLY_TOTAL_KM = 627.654;
-export const RALLY_TOTAL_ES_KM = 200.958;
+export const RALLY_NAME = RALLY.fullName;
+export const STAGE_1_DATE = RALLY.stageDates[0];
+export const STAGE_2_DATE = RALLY.stageDates[1];
 
 export type SegmentType = "LIAISON" | "ES";
 
@@ -514,19 +511,14 @@ export const SEGMENTS: Segment[] = [
   }),
 ];
 
-// Distances cumulées par étape (calculées au chargement du module)
+// Distances cumulées par étape (calculées au chargement du module).
 const computeCumulatives = () => {
   const out = new Map<string, number>();
-  let stage1Cum = 0;
-  let stage2Cum = 0;
+  const cumulativeByStage = new Map<number, number>();
   for (const seg of SEGMENTS) {
-    if (seg.stage === 1) {
-      stage1Cum += seg.distanceKm;
-      out.set(seg.id, stage1Cum);
-    } else {
-      stage2Cum += seg.distanceKm;
-      out.set(seg.id, stage2Cum);
-    }
+    const cum = (cumulativeByStage.get(seg.stage) ?? 0) + seg.distanceKm;
+    cumulativeByStage.set(seg.stage, cum);
+    out.set(seg.id, cum);
   }
   return out;
 };
@@ -536,8 +528,16 @@ const CUMULATIVE_KM = computeCumulatives();
 export const getCumulativeKm = (segmentId: string) =>
   CUMULATIVE_KM.get(segmentId) ?? 0;
 
+const sumKm = (predicate: (s: Segment) => boolean) =>
+  SEGMENTS.filter(predicate).reduce((acc, s) => acc + s.distanceKm, 0);
+
+export const STAGE_1_TOTAL_KM = sumKm((s) => s.stage === 1);
+export const STAGE_2_TOTAL_KM = sumKm((s) => s.stage === 2);
+export const RALLY_TOTAL_KM = STAGE_1_TOTAL_KM + STAGE_2_TOTAL_KM;
+export const RALLY_TOTAL_ES_KM = sumKm((s) => s.type === "ES");
+
 export const getStageTotalKm = (stage: 1 | 2) =>
-  stage === 1 ? STAGE_1_TOTAL_KM : STAGE_2_TOTAL_KM;
+  sumKm((s) => s.stage === stage);
 
 export const getSegmentById = (id: string) =>
   SEGMENTS.find((s) => s.id === id);
@@ -591,3 +591,7 @@ export const SECTIONS = [
 ];
 
 export const TOTAL_SECTIONS = SECTIONS.length;
+
+// Validation au chargement : déclenche tôt en cas de désynchro
+// (sections orphelines, GPX manquants, distances invalides, …).
+validateSegments(SEGMENTS, SECTIONS);

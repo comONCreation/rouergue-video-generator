@@ -8,6 +8,7 @@ import {
 } from "./gpx";
 import type { Segment } from "./data/segments";
 import { getGpxPathForSegment } from "./data/gpxFiles";
+import { mapRoute } from "./theme";
 
 export type StagedSegmentSpan = {
   segment: Segment;
@@ -30,8 +31,6 @@ export type StagedRoute = {
   segmentRoutes: { segment: Segment; route: ParsedGpx }[];
 };
 
-const DEDUPE_THRESHOLD_METERS = 0.5;
-
 const interpolateLonLat = (a: LonLat, b: LonLat, t: number): LonLat => [
   a[0] + (b[0] - a[0]) * t,
   a[1] + (b[1] - a[1]) * t,
@@ -40,19 +39,19 @@ const interpolateLonLat = (a: LonLat, b: LonLat, t: number): LonLat => [
 export const loadStagedRoute = async (
   segments: Segment[]
 ): Promise<StagedRoute> => {
-  const parsed: { segment: Segment; route: ParsedGpx }[] = [];
-  for (const segment of segments) {
-    const gpxPath = getGpxPathForSegment(segment);
-    if (!gpxPath) {
-      throw new Error(`GPX manquant pour le segment ${segment.id}`);
-    }
-    const response = await fetch(staticFile(gpxPath));
-    if (!response.ok) {
-      throw new Error(`GPX introuvable : ${gpxPath}`);
-    }
-    const route = parseGpx(await response.text());
-    parsed.push({ segment, route });
-  }
+  const parsed = await Promise.all(
+    segments.map(async (segment) => {
+      const gpxPath = getGpxPathForSegment(segment);
+      if (!gpxPath) {
+        throw new Error(`GPX manquant pour le segment ${segment.id}`);
+      }
+      const response = await fetch(staticFile(gpxPath));
+      if (!response.ok) {
+        throw new Error(`GPX introuvable : ${gpxPath}`);
+      }
+      return { segment, route: parseGpx(await response.text()) };
+    })
+  );
 
   const coordinates: LonLat[] = [];
   const segmentBoundsByIndex: {
@@ -65,7 +64,8 @@ export const loadStagedRoute = async (
     const startIndex = coordinates.length;
     for (const coord of route.coordinates) {
       const last = coordinates[coordinates.length - 1];
-      if (last && distanceMeters(last, coord) < DEDUPE_THRESHOLD_METERS) continue;
+      if (last && distanceMeters(last, coord) < mapRoute.thresholds.dedupeMeters)
+        continue;
       coordinates.push(coord);
     }
     const endIndex = coordinates.length - 1;
@@ -86,7 +86,7 @@ export const loadStagedRoute = async (
     );
   }
 
-  const segments_: StagedSegmentSpan[] = segmentBoundsByIndex.map(
+  const segmentSpans: StagedSegmentSpan[] = segmentBoundsByIndex.map(
     ({ segment, startIndex, endIndex }) => {
       const spanCoords = coordinates.slice(startIndex, endIndex + 1);
       const localCumulative: number[] = [0];
@@ -116,21 +116,27 @@ export const loadStagedRoute = async (
     coordinates,
     cumulativeDistances,
     totalDistanceMeters: cumulativeDistances[cumulativeDistances.length - 1],
-    segments: segments_,
+    segments: segmentSpans,
     waypoints,
     segmentRoutes: parsed,
   };
 };
 
+export const findActiveSegmentIndex = (
+  route: StagedRoute,
+  distance: number
+): number => {
+  for (let i = 0; i < route.segments.length; i++) {
+    if (distance <= route.segments[i].endDistance) return i;
+  }
+  return route.segments.length - 1;
+};
+
 export const findActiveSegmentSpan = (
   route: StagedRoute,
   distance: number
-): StagedSegmentSpan => {
-  for (const span of route.segments) {
-    if (distance <= span.endDistance) return span;
-  }
-  return route.segments[route.segments.length - 1];
-};
+): StagedSegmentSpan =>
+  route.segments[findActiveSegmentIndex(route, distance)];
 
 export const spanCoordinatesUntilDistance = (
   span: StagedSegmentSpan,
