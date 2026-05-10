@@ -5,9 +5,28 @@ import { FullStageVideo } from "./FullRallyVideo";
 import {
   SEGMENTS,
   computeSegmentDurationSeconds,
-  computeStageContinuousDurationSeconds,
 } from "./data/segments";
+import { loadStagedRoute } from "./stagedRoute";
+import { buildStageTimeline } from "./stageTimeline";
 import { layout } from "./theme";
+
+type FullStageProps = {
+  stage: 1 | 2;
+};
+
+const calculateFullStageMetadata = async ({
+  props,
+}: {
+  props: FullStageProps;
+}) => {
+  const segments = SEGMENTS.filter((segment) => segment.stage === props.stage);
+  const route = await loadStagedRoute(segments);
+  const timeline = buildStageTimeline(route);
+
+  return {
+    durationInFrames: Math.ceil(timeline.totalSeconds * layout.fps),
+  };
+};
 
 export const Root: React.FC = () => {
   return (
@@ -35,9 +54,7 @@ export const Root: React.FC = () => {
         width={layout.width}
         height={layout.height}
         fps={layout.fps}
-        durationInFrames={Math.round(
-          computeStageContinuousDurationSeconds(1) * layout.fps
-        )}
+        calculateMetadata={calculateFullStageMetadata}
         defaultProps={{ stage: 1 as const }}
       />
       <Composition
@@ -46,9 +63,7 @@ export const Root: React.FC = () => {
         width={layout.width}
         height={layout.height}
         fps={layout.fps}
-        durationInFrames={Math.round(
-          computeStageContinuousDurationSeconds(2) * layout.fps
-        )}
+        calculateMetadata={calculateFullStageMetadata}
         defaultProps={{ stage: 2 as const }}
       />
     </>
