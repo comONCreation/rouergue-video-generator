@@ -61,6 +61,9 @@ const getRouteColor = (segment: Segment) =>
 const getPitch = (segment: Segment) =>
   segment.type === "ES" ? mapCamera.pitch.es : mapCamera.pitch.liaison;
 
+const getZoom = (segment: Segment) =>
+  segment.type === "ES" ? mapCamera.zoom.es : mapCamera.zoom.liaison;
+
 const formatEsWaypointLabel = (
   rawName: string,
   esNumber: number | undefined
@@ -273,7 +276,7 @@ const updateMapFrame = (
 ) => {
   map.jumpTo({
     center: cameraState.center,
-    zoom: mapCamera.zoom,
+    zoom: getZoom(segment),
     bearing: cameraState.bearing,
     pitch: getPitch(segment),
     padding: {
@@ -360,7 +363,7 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
           container: containerRef.current as HTMLDivElement,
           style,
           center: start.center,
-          zoom: mapCamera.zoom,
+          zoom: getZoom(segment),
           bearing: start.bearing,
           pitch: getPitch(segment),
           interactive: false,

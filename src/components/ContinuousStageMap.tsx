@@ -50,6 +50,7 @@ import {
   loadAllPinImages,
   setPublicZoneRevealProgress,
   setGeoJsonData,
+  setTrackerCoreColor,
 } from "./mapLayers";
 
 type ContinuousStageMapProps = {
@@ -61,8 +62,16 @@ type CameraState = {
   distance: number;
   center: LonLat;
   bearing: number;
+  pitch: number;
+  zoom: number;
   trackerPoint: LonLat;
 };
+
+const pitchForSegment = (segment: Segment) =>
+  segment.type === "ES" ? mapCamera.pitch.es : mapCamera.pitch.liaison;
+
+const zoomForSegment = (segment: Segment) =>
+  segment.type === "ES" ? mapCamera.zoom.es : mapCamera.zoom.liaison;
 
 const buildContinuousCameraPath = (
   route: StagedRoute,
@@ -80,6 +89,8 @@ const buildContinuousCameraPath = (
   );
   const centerAlpha = halfLifeAlpha(cinematic.centerHalfLifeSeconds, fps);
   const bearingAlpha = halfLifeAlpha(cinematic.bearingHalfLifeSeconds, fps);
+  const pitchAlpha = halfLifeAlpha(cinematic.pitchHalfLifeSeconds, fps);
+  const zoomAlpha = halfLifeAlpha(cinematic.zoomHalfLifeSeconds, fps);
 
   const routeAsParsed: ParsedGpx = {
     name: "stage",
@@ -97,6 +108,9 @@ const buildContinuousCameraPath = (
     bearingWindow,
     cinematic.bearingWindow.sampleCount
   );
+  const initialSegment = findActiveSegmentSpan(route, 0).segment;
+  let pitch = pitchForSegment(initialSegment);
+  let zoom = zoomForSegment(initialSegment);
 
   for (let frame = 0; frame < durationInFrames; frame++) {
     const time = frame / fps;
@@ -112,16 +126,23 @@ const buildContinuousCameraPath = (
       bearingWindow,
       cinematic.bearingWindow.sampleCount
     );
+    const activeSegment = findActiveSegmentSpan(route, distance).segment;
+    const targetPitch = pitchForSegment(activeSegment);
+    const targetZoom = zoomForSegment(activeSegment);
 
     if (frame === 0) {
       center = targetCenter;
       bearing = targetBearing;
+      pitch = targetPitch;
+      zoom = targetZoom;
     } else {
       center = lerpLonLat(center, targetCenter, centerAlpha);
       bearing = lerpBearing(bearing, targetBearing, bearingAlpha);
+      pitch = pitch + (targetPitch - pitch) * pitchAlpha;
+      zoom = zoom + (targetZoom - zoom) * zoomAlpha;
     }
 
-    states.push({ distance, center, bearing, trackerPoint });
+    states.push({ distance, center, bearing, pitch, zoom, trackerPoint });
   }
 
   return states;
@@ -337,6 +358,9 @@ const SEGMENT_COLOR_EXPRESSION: mapboxgl.ExpressionSpecification = [
   colors.blue,
 ];
 
+const getSegmentColor = (segment: Segment) =>
+  segment.type === "ES" ? colors.orange : colors.blue;
+
 const addRouteLayers = (
   map: mapboxgl.Map,
   route: StagedRoute,
@@ -363,7 +387,7 @@ const addRouteLayers = (
 
   addRouteAndWaypointLayers(map, {
     lineColor: SEGMENT_COLOR_EXPRESSION,
-    trackerCoreColor: colors.orange,
+    trackerCoreColor: getSegmentColor(route.segments[0].segment),
   });
 };
 
@@ -376,16 +400,12 @@ const updateMapFrame = (
 ) => {
   const activeSegmentIndex = findActiveSegmentIndex(route, cameraState.distance);
   const activeSpan = route.segments[activeSegmentIndex];
-  const pitch =
-    activeSpan.segment.type === "ES"
-      ? mapCamera.pitch.es
-      : mapCamera.pitch.liaison;
 
   map.jumpTo({
     center: cameraState.center,
-    zoom: mapCamera.zoom,
+    zoom: cameraState.zoom,
     bearing: cameraState.bearing,
-    pitch,
+    pitch: cameraState.pitch,
     padding: {
       top: mapCamera.padding.top,
       bottom: mapCamera.padding.bottom,
@@ -405,6 +425,7 @@ const updateMapFrame = (
     SOURCE_IDS.tracker,
     pointFeature(cameraState.trackerPoint)
   );
+  setTrackerCoreColor(map, getSegmentColor(activeSpan.segment));
   setPublicZoneRevealProgress(map, cameraState.distance);
 
   if (lastActiveSegmentIndexRef.current !== activeSegmentIndex) {
@@ -481,17 +502,13 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
         mapboxgl.accessToken = token;
 
         const start = cameraPath[0];
-        const startSpan = findActiveSegmentSpan(route, start.distance);
         const map = new mapboxgl.Map({
           container: containerRef.current as HTMLDivElement,
           style,
           center: start.center,
-          zoom: mapCamera.zoom,
+          zoom: start.zoom,
           bearing: start.bearing,
-          pitch:
-            startSpan.segment.type === "ES"
-              ? mapCamera.pitch.es
-              : mapCamera.pitch.liaison,
+          pitch: start.pitch,
           interactive: false,
           preserveDrawingBuffer: true,
         });

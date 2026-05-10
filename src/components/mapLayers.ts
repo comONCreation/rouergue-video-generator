@@ -20,6 +20,8 @@ export const PIN_IDS = {
 } as const;
 
 export const LAYER_IDS = {
+  trackerHalo: "tracker-halo",
+  trackerCore: "tracker-core",
   publicZones: "waypoints-public-zones",
   markers: "waypoints-markers",
 } as const;
@@ -92,6 +94,11 @@ export const setPublicZoneRevealProgress = (
       1,
     ],
   ]);
+};
+
+export const setTrackerCoreColor = (map: mapboxgl.Map, color: string) => {
+  if (!map.getLayer(LAYER_IDS.trackerCore)) return;
+  map.setPaintProperty(LAYER_IDS.trackerCore, "circle-color", color);
 };
 
 const buildLineWidthExpression = (offset: number) => {
@@ -171,7 +178,7 @@ export const addRouteAndWaypointLayers = (
   } as mapboxgl.LineLayerSpecification);
 
   map.addLayer({
-    id: "tracker-halo",
+    id: LAYER_IDS.trackerHalo,
     type: "circle",
     source: SOURCE_IDS.tracker,
     paint: {
@@ -191,7 +198,7 @@ export const addRouteAndWaypointLayers = (
   } as mapboxgl.CircleLayerSpecification);
 
   map.addLayer({
-    id: "tracker-core",
+    id: LAYER_IDS.trackerCore,
     type: "circle",
     source: SOURCE_IDS.tracker,
     paint: {

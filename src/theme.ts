@@ -33,10 +33,13 @@ export const layout = {
 };
 
 export const mapCamera = {
-  zoom: 14,
+  zoom: {
+    es: 14.5,
+    liaison: 13.5,
+  },
   pitch: {
     es: 50,
-    liaison: 50,
+    liaison: 60,
   },
   padding: {
     top: 96,
@@ -63,6 +66,10 @@ export const mapCamera = {
       sampleCount: 17,
     },
     bearingHalfLifeSeconds: 2.2,
+    // Lissage du pitch et du zoom lors d'un changement de type de segment
+    // (ES ↔ liaison). Évite la cassure visuelle d'un saut instantané.
+    pitchHalfLifeSeconds: 2,
+    zoomHalfLifeSeconds: 2,
   },
   // Vidéos par segment unitaire (S1-ES1, S1-L02, …).
   segmentVideo: {
