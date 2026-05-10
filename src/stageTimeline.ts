@@ -3,6 +3,7 @@ import {
   type GpxWaypoint,
   type LonLat,
 } from "./gpx";
+import { easedTravelProgress } from "./cameraPath";
 import type { Segment } from "./data/segments";
 import { mapCamera, mapRoute } from "./theme";
 import type { StagedRoute, StagedSegmentSpan } from "./stagedRoute";
@@ -244,10 +245,8 @@ export const buildStageTimeline = (route: StagedRoute): StageTimeline => {
       const next = keyPoints[i + 1];
       const gapMeters = Math.max(0, next.distance - kp.distance);
       const speedKmh = computeTransitSpeedKmh(route, kp.distance, next.distance);
-      const transitSeconds = Math.max(
-        0.2,
-        (gapMeters / 1000 / speedKmh) * 3600
-      );
+      const speedBasedSeconds = (gapMeters / 1000 / speedKmh) * 3600;
+      const transitSeconds = speedBasedSeconds + mapCamera.travelEaseSeconds;
       phases.push({
         kind: "transit",
         fromIndex: i,
@@ -266,8 +265,6 @@ export const buildStageTimeline = (route: StagedRoute): StageTimeline => {
   };
 };
 
-const smoothStep = (value: number) => value * value * (3 - 2 * value);
-
 export const getDistanceAtTime = (
   timeline: StageTimeline,
   time: number
@@ -281,7 +278,11 @@ export const getDistanceAtTime = (
       const localT =
         (time - phase.startTime) /
         Math.max(1e-6, phase.endTime - phase.startTime);
-      const eased = smoothStep(Math.max(0, Math.min(1, localT)));
+      const eased = easedTravelProgress(
+        localT * (phase.endTime - phase.startTime),
+        phase.endTime - phase.startTime,
+        mapCamera.travelEaseSeconds
+      );
       const from = timeline.keyPoints[phase.fromIndex].distance;
       const to = timeline.keyPoints[phase.toIndex].distance;
       return from + (to - from) * eased;

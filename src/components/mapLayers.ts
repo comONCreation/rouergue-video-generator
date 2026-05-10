@@ -19,6 +19,11 @@ export const PIN_IDS = {
   standard: "pin-standard",
 } as const;
 
+export const LAYER_IDS = {
+  publicZones: "waypoints-public-zones",
+  markers: "waypoints-markers",
+} as const;
+
 export const loadMapImage = (
   map: mapboxgl.Map,
   imageId: string,
@@ -59,6 +64,34 @@ export const setGeoJsonData = (
 ) => {
   const source = map.getSource(sourceId) as mapboxgl.GeoJSONSource | undefined;
   source?.setData(data);
+};
+
+export const setPublicZoneRevealProgress = (
+  map: mapboxgl.Map,
+  distance: number
+) => {
+  if (!map.getLayer(LAYER_IDS.publicZones)) return;
+  map.setPaintProperty(LAYER_IDS.publicZones, "icon-opacity", [
+    "*",
+    [
+      "interpolate",
+      ["linear"],
+      ["-", distance, ["get", "revealDistanceMeters"]],
+      -mapPins.publicZoneRevealFadeMeters,
+      0,
+      0,
+      1,
+    ],
+    [
+      "interpolate",
+      ["linear"],
+      ["-", ["get", "hideDistanceMeters"], distance],
+      0,
+      0,
+      mapPins.publicZoneRevealFadeMeters,
+      1,
+    ],
+  ]);
 };
 
 const buildLineWidthExpression = (offset: number) => {
@@ -178,7 +211,7 @@ export const addRouteAndWaypointLayers = (
   } as mapboxgl.CircleLayerSpecification);
 
   map.addLayer({
-    id: "waypoints-public-zones",
+    id: LAYER_IDS.publicZones,
     type: "symbol",
     source: SOURCE_IDS.waypoints,
     filter: ["==", ["get", "kind"], "public-zone"],
@@ -189,10 +222,13 @@ export const addRouteAndWaypointLayers = (
       "icon-allow-overlap": true,
       "icon-ignore-placement": true,
     },
+    paint: {
+      "icon-opacity": 0,
+    },
   } as mapboxgl.SymbolLayerSpecification);
 
   map.addLayer({
-    id: "waypoints-markers",
+    id: LAYER_IDS.markers,
     type: "symbol",
     source: SOURCE_IDS.waypoints,
     filter: ["!=", ["get", "kind"], "public-zone"],

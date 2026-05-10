@@ -74,6 +74,10 @@ export const mapCamera = {
     es: 2500,
     liaison: 4500,
   },
+  // Durée fixe de l'accélération et de la décélération caméra. Le reste du
+  // transit se fait à vitesse constante, pour éviter qu'un long tracé garde
+  // une accélération étirée sur toute sa durée.
+  travelEaseSeconds: 2,
   // Vidéo continue d'étape complète (FULL-S1, FULL-S2).
   stageVideo: {
     // Durée des pauses caméra à chaque key point intermédiaire ; entre deux
@@ -120,7 +124,7 @@ export const mapRoute = {
     dedupeMeters: 0.5,
     clusterRadiusMeters: 80,
     coincidentKeyPointsMeters: 100,
-    visiblePastSegments: 1,
+    visiblePastSegments: 2,
   },
   tracker: {
     haloColor: "rgba(255, 255, 255, 0.88)",
@@ -149,6 +153,7 @@ export const mapPins = {
     standard: 0.65,
     publicZone: 1,
   },
+  publicZoneRevealFadeMeters: 140,
   label: {
     font: ["Montserrat Bold", "Arial Unicode MS Bold"],
     textOffset: {

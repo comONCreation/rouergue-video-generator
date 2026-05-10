@@ -13,21 +13,22 @@ import {
   parseGpx,
   pointAtDistance,
   routeCoordinatesUntilDistance,
+  routeDistanceAtPoint,
   routeFeature,
   waypointCollection,
+  type DisplayWaypoint,
   type GpxWaypoint,
   type LonLat,
   type ParsedGpx,
 } from "../gpx";
 import {
-  clamp,
+  easedTravelProgress,
   getSmoothedBearing,
   getSmoothingWindow,
   halfLifeAlpha,
   lerpBearing,
   lerpLonLat,
   pointFeature,
-  smoothStep,
 } from "../cameraPath";
 import { colors, layout, mapCamera } from "../theme";
 import { SEGMENTS, type Segment } from "../data/segments";
@@ -38,6 +39,7 @@ import {
   SOURCE_IDS,
   addRouteAndWaypointLayers,
   loadAllPinImages,
+  setPublicZoneRevealProgress,
   setGeoJsonData,
 } from "./mapLayers";
 
@@ -95,44 +97,60 @@ const findAdjacentEsNumber = (
 const getDisplayWaypoints = (
   segment: Segment,
   route: ParsedGpx
-): GpxWaypoint[] => {
+): DisplayWaypoint[] => {
+  const addRevealDistance = (waypoint: GpxWaypoint): DisplayWaypoint =>
+    waypoint.kind === "public-zone"
+      ? {
+          ...waypoint,
+          revealDistanceMeters: routeDistanceAtPoint(
+            route,
+            waypoint.coordinates
+          ),
+          hideDistanceMeters: route.totalDistanceMeters,
+        }
+      : waypoint;
+
   if (segment.type !== "ES") {
-    return route.waypoints.map((waypoint) => {
+    return route.waypoints
+      .map((waypoint) => {
+        if (waypoint.kind === "public-zone") return waypoint;
+        if (waypoint.kind === "start") {
+          const esNumber = findAdjacentEsNumber(segment, "next");
+          return {
+            ...waypoint,
+            name:
+              esNumber !== undefined
+                ? formatEsWaypointLabel(waypoint.name, esNumber)
+                : waypoint.name,
+          };
+        }
+        if (waypoint.kind === "finish") {
+          const esNumber = findAdjacentEsNumber(segment, "previous");
+          return {
+            ...waypoint,
+            name:
+              esNumber !== undefined
+                ? formatEsWaypointLabel(waypoint.name, esNumber)
+                : waypoint.name,
+          };
+        }
+        return { ...waypoint, kind: "standard" as const };
+      })
+      .map(addRevealDistance);
+  }
+
+  return route.waypoints
+    .map((waypoint) => {
       if (waypoint.kind === "public-zone") return waypoint;
-      if (waypoint.kind === "start") {
-        const esNumber = findAdjacentEsNumber(segment, "next");
+      if (waypoint.kind === "start" || waypoint.kind === "finish") {
         return {
           ...waypoint,
-          name:
-            esNumber !== undefined
-              ? formatEsWaypointLabel(waypoint.name, esNumber)
-              : waypoint.name,
-        };
-      }
-      if (waypoint.kind === "finish") {
-        const esNumber = findAdjacentEsNumber(segment, "previous");
-        return {
-          ...waypoint,
-          name:
-            esNumber !== undefined
-              ? formatEsWaypointLabel(waypoint.name, esNumber)
-              : waypoint.name,
+          name: formatEsWaypointLabel(waypoint.name, segment.esNumber),
         };
       }
       return { ...waypoint, kind: "standard" as const };
-    });
-  }
-
-  return route.waypoints.map((waypoint) => {
-    if (waypoint.kind === "public-zone") return waypoint;
-    if (waypoint.kind === "start" || waypoint.kind === "finish") {
-      return {
-        ...waypoint,
-        name: formatEsWaypointLabel(waypoint.name, segment.esNumber),
-      };
-    }
-    return { ...waypoint, kind: "standard" as const };
-  });
+    })
+    .map(addRevealDistance);
 };
 
 const getProgress = (
@@ -145,8 +163,11 @@ const getProgress = (
     Math.floor(Math.max(0, durationInFrames - 1) / 2)
   );
   const activeFrames = Math.max(1, durationInFrames - holdFrames * 2);
-  const rawProgress = clamp((frame - holdFrames) / activeFrames, 0, 1);
-  return smoothStep(rawProgress);
+  return easedTravelProgress(
+    (frame - holdFrames) / fps,
+    activeFrames / fps,
+    mapCamera.travelEaseSeconds
+  );
 };
 
 const buildCinematicCameraPath = (
@@ -274,6 +295,7 @@ const updateMapFrame = (
     SOURCE_IDS.tracker,
     pointFeature(cameraState.trackerPoint)
   );
+  setPublicZoneRevealProgress(map, cameraState.distance);
 };
 
 export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {

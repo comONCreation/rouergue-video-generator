@@ -10,7 +10,30 @@ import {
 export const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
-export const smoothStep = (value: number) => value * value * (3 - 2 * value);
+const smoothStepIntegral = (value: number) => value ** 3 - 0.5 * value ** 4;
+
+export const easedTravelProgress = (
+  elapsedSeconds: number,
+  totalSeconds: number,
+  easeSeconds: number
+) => {
+  if (totalSeconds <= 0) return 1;
+  const elapsed = clamp(elapsedSeconds, 0, totalSeconds);
+  const ease = clamp(easeSeconds, 0, totalSeconds / 2);
+  if (ease <= 0) return elapsed / totalSeconds;
+
+  const cruiseArea = totalSeconds - ease;
+  if (elapsed < ease) {
+    return (ease * smoothStepIntegral(elapsed / ease)) / cruiseArea;
+  }
+
+  if (elapsed <= totalSeconds - ease) {
+    return (ease * 0.5 + (elapsed - ease)) / cruiseArea;
+  }
+
+  const remaining = totalSeconds - elapsed;
+  return 1 - (ease * smoothStepIntegral(remaining / ease)) / cruiseArea;
+};
 
 export const lerpLonLat = (from: LonLat, to: LonLat, alpha: number): LonLat => [
   from[0] + (to[0] - from[0]) * alpha,

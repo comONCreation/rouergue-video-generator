@@ -15,6 +15,11 @@ export type GpxWaypoint = {
   coordinates: LonLat;
 };
 
+export type DisplayWaypoint = GpxWaypoint & {
+  revealDistanceMeters?: number;
+  hideDistanceMeters?: number;
+};
+
 export type ParsedGpx = {
   name: string;
   coordinates: LonLat[];
@@ -187,6 +192,47 @@ export const pointAtDistance = (route: ParsedGpx, distance: number) => {
   };
 };
 
+export const routeDistanceAtPoint = (
+  route: Pick<ParsedGpx, "coordinates" | "cumulativeDistances">,
+  point: LonLat
+) => {
+  let bestDistance = route.cumulativeDistances[0] ?? 0;
+  let bestError = Number.POSITIVE_INFINITY;
+
+  for (let i = 1; i < route.coordinates.length; i++) {
+    const from = route.coordinates[i - 1];
+    const to = route.coordinates[i];
+    const latScale = Math.cos(toRad(from[1]));
+    const toX = toRad(to[0] - from[0]) * EARTH_RADIUS_METERS * latScale;
+    const toY = toRad(to[1] - from[1]) * EARTH_RADIUS_METERS;
+    const pointX = toRad(point[0] - from[0]) * EARTH_RADIUS_METERS * latScale;
+    const pointY = toRad(point[1] - from[1]) * EARTH_RADIUS_METERS;
+    const segmentLengthSquared = toX * toX + toY * toY;
+    const progress =
+      segmentLengthSquared === 0
+        ? 0
+        : Math.max(
+            0,
+            Math.min(1, (pointX * toX + pointY * toY) / segmentLengthSquared)
+          );
+    const projectedX = toX * progress;
+    const projectedY = toY * progress;
+    const error =
+      (pointX - projectedX) * (pointX - projectedX) +
+      (pointY - projectedY) * (pointY - projectedY);
+
+    if (error < bestError) {
+      bestError = error;
+      bestDistance =
+        route.cumulativeDistances[i - 1] +
+        (route.cumulativeDistances[i] - route.cumulativeDistances[i - 1]) *
+          progress;
+    }
+  }
+
+  return bestDistance;
+};
+
 export const routeCoordinatesUntilDistance = (
   route: ParsedGpx,
   distance: number
@@ -234,8 +280,17 @@ export const routeFeature = (
 });
 
 export const waypointCollection = (
-  waypoints: GpxWaypoint[]
-): FeatureCollection<Point, { kind: WaypointKind; label: string; name: string }> => ({
+  waypoints: DisplayWaypoint[]
+): FeatureCollection<
+  Point,
+  {
+    kind: WaypointKind;
+    label: string;
+    name: string;
+    revealDistanceMeters: number;
+    hideDistanceMeters: number;
+  }
+> => ({
   type: "FeatureCollection",
   features: waypoints.map((waypoint) => ({
     type: "Feature",
@@ -246,6 +301,8 @@ export const waypointCollection = (
           ? ""
           : waypoint.name.replace(/\s*\(.+\)\s*$/, ""),
       name: waypoint.name,
+      revealDistanceMeters: waypoint.revealDistanceMeters ?? 0,
+      hideDistanceMeters: waypoint.hideDistanceMeters ?? Number.MAX_SAFE_INTEGER,
     },
     geometry: {
       type: "Point",

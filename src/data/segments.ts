@@ -548,7 +548,8 @@ export const computeSegmentDurationSeconds = (segment: Segment): number => {
       ? mapCamera.cameraSpeed.es
       : mapCamera.cameraSpeed.liaison;
   const distanceKm = Math.max(0, segment.distanceKm);
-  const activeSeconds = speedKmh > 0 ? (distanceKm / speedKmh) * 3600 : 0;
+  const speedBasedSeconds = speedKmh > 0 ? (distanceKm / speedKmh) * 3600 : 0;
+  const activeSeconds = speedBasedSeconds + mapCamera.travelEaseSeconds;
   return mapCamera.segmentVideo.introOutroHoldSeconds * 2 + activeSeconds;
 };
 
@@ -565,7 +566,8 @@ export const computeStageContinuousDurationSeconds = (
         ? mapCamera.cameraSpeed.es
         : mapCamera.cameraSpeed.liaison;
     const distanceKm = Math.max(0, segment.distanceKm);
-    return acc + (speedKmh > 0 ? (distanceKm / speedKmh) * 3600 : 0);
+    const speedBasedSeconds = speedKmh > 0 ? (distanceKm / speedKmh) * 3600 : 0;
+    return acc + speedBasedSeconds + mapCamera.travelEaseSeconds;
   }, 0);
   // Estimation des holds : 1 départ + 1 arrivée d'étape, 2 holds par ES
   // (départ + arrivée), 1 hold par liaison côté entrée d'ES, plus marge pour

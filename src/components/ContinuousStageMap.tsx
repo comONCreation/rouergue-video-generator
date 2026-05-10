@@ -12,7 +12,9 @@ import {
 import {
   distanceMeters,
   pointAtDistance,
+  routeDistanceAtPoint,
   waypointCollection,
+  type DisplayWaypoint,
   type GpxWaypoint,
   type LonLat,
   type ParsedGpx,
@@ -46,6 +48,7 @@ import {
   SOURCE_IDS,
   addRouteAndWaypointLayers,
   loadAllPinImages,
+  setPublicZoneRevealProgress,
   setGeoJsonData,
 } from "./mapLayers";
 
@@ -202,7 +205,7 @@ const KIND_PRIORITY: Record<WaypointKind, number> = {
 };
 
 type WaypointVariant = {
-  decorated: GpxWaypoint;
+  decorated: DisplayWaypoint;
   segmentIndex: number;
 };
 
@@ -215,7 +218,13 @@ const buildWaypointClusters = (route: StagedRoute): WaypointCluster[] => {
   for (let i = 0; i < route.segmentRoutes.length; i++) {
     const { segment, route: parsed } = route.segmentRoutes[i];
     for (const wp of parsed.waypoints) {
-      const decorated = decorateWaypointForSegment(wp, segment);
+      const decorated = {
+        ...decorateWaypointForSegment(wp, segment),
+        revealDistanceMeters:
+          route.segments[i].startDistance +
+          routeDistanceAtPoint(parsed, wp.coordinates),
+        hideDistanceMeters: route.segments[i].endDistance,
+      };
       const variant: WaypointVariant = { decorated, segmentIndex: i };
       const existing = clusters.find((c) =>
         c.variants.some(
@@ -259,7 +268,7 @@ const compareScores = (a: number[], b: number[]) => {
 const pickVariantForActiveSegment = (
   cluster: WaypointCluster,
   activeSegmentIndex: number
-): GpxWaypoint =>
+): DisplayWaypoint =>
   cluster.variants.reduce((best, candidate) =>
     compareScores(
       scoreVariant(candidate, activeSegmentIndex),
@@ -272,7 +281,7 @@ const pickVariantForActiveSegment = (
 const buildActiveDisplayWaypoints = (
   clusters: WaypointCluster[],
   activeSegmentIndex: number
-): GpxWaypoint[] =>
+): DisplayWaypoint[] =>
   clusters.map((c) => pickVariantForActiveSegment(c, activeSegmentIndex));
 
 const buildSegmentLineFeature = (
@@ -396,6 +405,7 @@ const updateMapFrame = (
     SOURCE_IDS.tracker,
     pointFeature(cameraState.trackerPoint)
   );
+  setPublicZoneRevealProgress(map, cameraState.distance);
 
   if (lastActiveSegmentIndexRef.current !== activeSegmentIndex) {
     lastActiveSegmentIndexRef.current = activeSegmentIndex;
