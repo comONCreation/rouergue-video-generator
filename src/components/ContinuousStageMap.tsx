@@ -391,12 +391,22 @@ const addRouteLayers = (
   });
 };
 
+const sortedMarkerDistances = (waypoints: DisplayWaypoint[]): number[] =>
+  waypoints
+    .filter((w) => w.kind !== "public-zone")
+    .map((w) => w.revealDistanceMeters ?? 0)
+    .sort((a, b) => a - b);
+
+const upcomingCutoff = (sortedDistances: number[], distance: number): number =>
+  sortedDistances.find((d) => d > distance) ?? Number.MAX_SAFE_INTEGER;
+
 const updateMapFrame = (
   map: mapboxgl.Map,
   route: StagedRoute,
   cameraState: CameraState,
   clusters: WaypointCluster[],
-  lastActiveSegmentIndexRef: { current: number }
+  lastActiveSegmentIndexRef: { current: number },
+  markerDistancesRef: { current: number[] }
 ) => {
   const activeSegmentIndex = findActiveSegmentIndex(route, cameraState.distance);
   const activeSpan = route.segments[activeSegmentIndex];
@@ -426,10 +436,11 @@ const updateMapFrame = (
     pointFeature(cameraState.trackerPoint)
   );
   setTrackerCoreColor(map, getSegmentColor(activeSpan.segment));
-  setPublicZoneRevealProgress(map, cameraState.distance);
 
   if (lastActiveSegmentIndexRef.current !== activeSegmentIndex) {
     lastActiveSegmentIndexRef.current = activeSegmentIndex;
+    const displayed = buildActiveDisplayWaypoints(clusters, activeSegmentIndex);
+    markerDistancesRef.current = sortedMarkerDistances(displayed);
     setGeoJsonData(
       map,
       SOURCE_IDS.routeFull,
@@ -438,11 +449,15 @@ const updateMapFrame = (
     setGeoJsonData(
       map,
       SOURCE_IDS.waypoints,
-      waypointCollection(
-        buildActiveDisplayWaypoints(clusters, activeSegmentIndex)
-      )
+      waypointCollection(displayed)
     );
   }
+
+  setPublicZoneRevealProgress(
+    map,
+    cameraState.distance,
+    upcomingCutoff(markerDistancesRef.current, cameraState.distance)
+  );
 };
 
 export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
@@ -455,6 +470,7 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const cameraPathRef = useRef<CameraState[]>([]);
   const lastActiveSegmentIndexRef = useRef<number>(-1);
+  const markerDistancesRef = useRef<number[]>([]);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -522,13 +538,15 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
             await loadAllPinImages(map);
 
             lastActiveSegmentIndexRef.current = -1;
+            markerDistancesRef.current = [];
             addRouteLayers(map, route, waypointClusters);
             updateMapFrame(
               map,
               route,
               start,
               waypointClusters,
-              lastActiveSegmentIndexRef
+              lastActiveSegmentIndexRef,
+              markerDistancesRef
             );
 
             map.once("idle", () => {
@@ -585,7 +603,8 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
       route,
       cameraState,
       waypointClusters,
-      lastActiveSegmentIndexRef
+      lastActiveSegmentIndexRef,
+      markerDistancesRef
     );
     map.triggerRepaint();
 

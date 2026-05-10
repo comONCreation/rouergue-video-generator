@@ -17,7 +17,6 @@ import {
   routeFeature,
   waypointCollection,
   type DisplayWaypoint,
-  type GpxWaypoint,
   type LonLat,
   type ParsedGpx,
 } from "../gpx";
@@ -101,17 +100,14 @@ const getDisplayWaypoints = (
   segment: Segment,
   route: ParsedGpx
 ): DisplayWaypoint[] => {
-  const addRevealDistance = (waypoint: GpxWaypoint): DisplayWaypoint =>
-    waypoint.kind === "public-zone"
-      ? {
-          ...waypoint,
-          revealDistanceMeters: routeDistanceAtPoint(
-            route,
-            waypoint.coordinates
-          ),
-          hideDistanceMeters: route.totalDistanceMeters,
-        }
-      : waypoint;
+  // ZP comme markers : reveal = distance à laquelle le point apparaît sur
+  // le tracé. La couche markers cache (icône + label) tant que la caméra
+  // n'a pas franchi cette distance.
+  const addRevealDistance = (waypoint: DisplayWaypoint): DisplayWaypoint => ({
+    ...waypoint,
+    revealDistanceMeters: routeDistanceAtPoint(route, waypoint.coordinates),
+    hideDistanceMeters: route.totalDistanceMeters,
+  });
 
   if (segment.type !== "ES") {
     return route.waypoints
@@ -266,13 +262,19 @@ const addRouteLayers = (
     lineColor: routeColor,
     trackerCoreColor: routeColor,
   });
+
+  return displayWaypoints
+    .filter((w) => w.kind !== "public-zone")
+    .map((w) => w.revealDistanceMeters ?? 0)
+    .sort((a, b) => a - b);
 };
 
 const updateMapFrame = (
   map: mapboxgl.Map,
   route: ParsedGpx,
   segment: Segment,
-  cameraState: CameraState
+  cameraState: CameraState,
+  sortedMarkerDistances: number[]
 ) => {
   map.jumpTo({
     center: cameraState.center,
@@ -298,7 +300,10 @@ const updateMapFrame = (
     SOURCE_IDS.tracker,
     pointFeature(cameraState.trackerPoint)
   );
-  setPublicZoneRevealProgress(map, cameraState.distance);
+  const cutoff =
+    sortedMarkerDistances.find((d) => d > cameraState.distance) ??
+    Number.MAX_SAFE_INTEGER;
+  setPublicZoneRevealProgress(map, cameraState.distance, cutoff);
 };
 
 export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
@@ -308,6 +313,7 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const routeRef = useRef<ParsedGpx | null>(null);
   const cameraPathRef = useRef<CameraState[]>([]);
+  const markerDistancesRef = useRef<number[]>([]);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -378,8 +384,14 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
 
             await loadAllPinImages(map);
 
-            addRouteLayers(map, route, segment);
-            updateMapFrame(map, route, segment, start);
+            markerDistancesRef.current = addRouteLayers(map, route, segment);
+            updateMapFrame(
+              map,
+              route,
+              segment,
+              start,
+              markerDistancesRef.current
+            );
 
             map.once("idle", () => {
               if (cancelled) return;
@@ -431,7 +443,13 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
     };
 
     map.once("render", complete);
-    updateMapFrame(map, route, segment, cameraState);
+    updateMapFrame(
+      map,
+      route,
+      segment,
+      cameraState,
+      markerDistancesRef.current
+    );
     map.triggerRepaint();
 
     const timeout = window.setTimeout(

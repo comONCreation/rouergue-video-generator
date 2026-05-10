@@ -129,8 +129,8 @@ export const mapRoute = {
   //   éviter la superposition sur les boucles.
   thresholds: {
     dedupeMeters: 0.5,
-    clusterRadiusMeters: 80,
-    coincidentKeyPointsMeters: 100,
+    clusterRadiusMeters: 150,
+    coincidentKeyPointsMeters: 150,
     visiblePastSegments: 2,
   },
   tracker: {

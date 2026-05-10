@@ -70,30 +70,48 @@ export const setGeoJsonData = (
 
 export const setPublicZoneRevealProgress = (
   map: mapboxgl.Map,
-  distance: number
+  distance: number,
+  // Distance du prochain waypoint encore à franchir (= plus petite
+  // `revealDistanceMeters` strictement supérieure à `distance`). Vaut
+  // `Number.MAX_SAFE_INTEGER` si tous les waypoints sont déjà passés.
+  // Markers visibles ssi `revealDistance ≤ upcomingMarkerCutoff` : on
+  // affiche les points déjà atteints + celui vers lequel on roule.
+  upcomingMarkerCutoff: number = Number.MAX_SAFE_INTEGER
 ) => {
-  if (!map.getLayer(LAYER_IDS.publicZones)) return;
-  map.setPaintProperty(LAYER_IDS.publicZones, "icon-opacity", [
-    "*",
-    [
-      "interpolate",
-      ["linear"],
-      ["-", distance, ["get", "revealDistanceMeters"]],
-      -mapPins.publicZoneRevealFadeMeters,
-      0,
-      0,
+  if (map.getLayer(LAYER_IDS.publicZones)) {
+    map.setPaintProperty(LAYER_IDS.publicZones, "icon-opacity", [
+      "*",
+      [
+        "interpolate",
+        ["linear"],
+        ["-", distance, ["get", "revealDistanceMeters"]],
+        -mapPins.publicZoneRevealFadeMeters,
+        0,
+        0,
+        1,
+      ],
+      [
+        "interpolate",
+        ["linear"],
+        ["-", ["get", "hideDistanceMeters"], distance],
+        0,
+        0,
+        mapPins.publicZoneRevealFadeMeters,
+        1,
+      ],
+    ]);
+  }
+
+  if (map.getLayer(LAYER_IDS.markers)) {
+    const opacity: mapboxgl.ExpressionSpecification = [
+      "case",
+      ["<=", ["get", "revealDistanceMeters"], upcomingMarkerCutoff],
       1,
-    ],
-    [
-      "interpolate",
-      ["linear"],
-      ["-", ["get", "hideDistanceMeters"], distance],
       0,
-      0,
-      mapPins.publicZoneRevealFadeMeters,
-      1,
-    ],
-  ]);
+    ];
+    map.setPaintProperty(LAYER_IDS.markers, "icon-opacity", opacity);
+    map.setPaintProperty(LAYER_IDS.markers, "text-opacity", opacity);
+  }
 };
 
 export const setTrackerCoreColor = (map: mapboxgl.Map, color: string) => {
