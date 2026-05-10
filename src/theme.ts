@@ -147,7 +147,7 @@ export const mapPins = {
   iconSize: {
     startFinish: 0.65,
     standard: 0.65,
-    publicZone: 0.15,
+    publicZone: 1,
   },
   label: {
     font: ["Montserrat Bold", "Arial Unicode MS Bold"],

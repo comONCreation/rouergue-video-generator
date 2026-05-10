@@ -178,9 +178,24 @@ export const addRouteAndWaypointLayers = (
   } as mapboxgl.CircleLayerSpecification);
 
   map.addLayer({
-    id: "waypoints",
+    id: "waypoints-public-zones",
     type: "symbol",
     source: SOURCE_IDS.waypoints,
+    filter: ["==", ["get", "kind"], "public-zone"],
+    layout: {
+      "icon-image": PIN_IDS.publicZone,
+      "icon-size": mapPins.iconSize.publicZone,
+      "icon-anchor": "bottom",
+      "icon-allow-overlap": true,
+      "icon-ignore-placement": true,
+    },
+  } as mapboxgl.SymbolLayerSpecification);
+
+  map.addLayer({
+    id: "waypoints-markers",
+    type: "symbol",
+    source: SOURCE_IDS.waypoints,
+    filter: ["!=", ["get", "kind"], "public-zone"],
     layout: {
       "icon-image": [
         "match",
@@ -189,8 +204,6 @@ export const addRouteAndWaypointLayers = (
         PIN_IDS.start,
         "finish",
         PIN_IDS.finish,
-        "public-zone",
-        PIN_IDS.publicZone,
         "standard",
         PIN_IDS.standard,
         PIN_IDS.standard,
@@ -198,8 +211,6 @@ export const addRouteAndWaypointLayers = (
       "icon-size": [
         "match",
         ["get", "kind"],
-        "public-zone",
-        mapPins.iconSize.publicZone,
         "standard",
         mapPins.iconSize.standard,
         mapPins.iconSize.startFinish,
