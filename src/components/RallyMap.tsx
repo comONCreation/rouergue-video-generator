@@ -31,6 +31,7 @@ import {
 } from "../cameraPath";
 import { colors, layout, mapCamera } from "../theme";
 import { SEGMENTS, type Segment } from "../data/segments";
+import { configureMapboxForRendering } from "../mapboxRenderConfig";
 import { resolveMapboxStyle } from "../rally.config";
 import { MapFallback } from "./MapFallback";
 import {
@@ -329,6 +330,7 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
           fps
         );
         cameraPathRef.current = cameraPath;
+        configureMapboxForRendering();
         mapboxgl.accessToken = token;
 
         const start = cameraPath[0];

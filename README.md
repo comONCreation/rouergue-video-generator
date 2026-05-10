@@ -18,7 +18,7 @@ livrables :
 - Remotion 4.0 + React 19 + TypeScript 5
 - Mapbox GL JS pour les fonds de carte et la caméra animée
 - Police Montserrat (`@remotion/google-fonts`)
-- Sortie : 1920×1080 @ 60 fps, ProRes HQ (`.mov`)
+- Sortie : 1920×1080 @ 60 fps, ProRes HQ (`.mov`) via la CLI Remotion
 
 ## Installation
 
@@ -49,48 +49,39 @@ npm run dev
 Ouvre le studio. Toutes les compositions (par segment et par étape) y sont
 listées et scrubbables.
 
-### Rendu d'une étape complète (continue, sans coupure)
+### Rendu avec la CLI Remotion
 
 ```bash
-npm run render -- FULL-S1 out/etape-1.mov
-npm run render -- FULL-S2 out/etape-2.mov
+npm run render -- S1-ES1      # un segment unitaire
+npm run render -- FULL-S1     # étape 1 complète, en continu
+npm run render -- FULL-S2     # étape 2 complète, en continu
 ```
 
-La durée est calculée automatiquement à partir des distances et des vitesses
-caméra définies dans `theme.ts` (`mapCamera.cameraSpeed.es` / `.liaison`).
+La commande utilise la CLI Remotion standard (`remotion render`). Les paramètres
+d'export sont centralisés dans `remotion.config.ts` : ProRes HQ, frames JPEG 95,
+pixel format `yuv422p10le`, espace couleur BT.709 et concurrence limitée à 1
+pour préserver la stabilité des chargements Mapbox satellite.
 
-### Rendu d'un segment unitaire (itération rapide)
+Sans chemin de sortie explicite, Remotion écrit automatiquement dans `out/` :
+`npm run render -- S1-ES1` produit `out/S1-ES1.mov`.
+
+Pour choisir un fichier précis :
 
 ```bash
-npm run render:one -- S1-ES1
-npm run render:one -- S1-ES1 --duration 15
+npm run render -- S1-ES1 out/segments/S1-ES1.mov
 ```
 
-### Rendu en lot de tous les segments
+Pour rendre plusieurs compositions, lancer la commande pour chaque ID voulu :
 
 ```bash
-npm run render:all
-npm run render:all -- --duration 45
-npm run render:all -- --only S1-ES1,S2-ES15
+npm run render -- S1-ES1
+npm run render -- S1-L02
+npm run render -- S2-ES15
 ```
 
-Sortie dans `out/`.
-
-### Durées personnalisées par segment
-
-Créer un `durations.json` à la racine pour fixer la durée de chaque clip
-au seconde près (utilisé par `render:all` et `render:one`) :
-
-```json
-{
-  "S1-L01": 65,
-  "S1-L02": 80,
-  "S1-ES1": 18
-}
-```
-
-Les segments absents utilisent la durée calculée (`computeSegmentDurationSeconds`)
-ou la valeur fournie via `--duration`.
+La durée des compositions est calculée automatiquement à partir des distances et
+des vitesses caméra définies dans `theme.ts`
+(`mapCamera.cameraSpeed.es` / `.liaison`).
 
 ## Comment ça marche (étape continue)
 
@@ -156,9 +147,6 @@ src/
     SegmentBlock.tsx     → bloc d'info segment
     StageProgress.tsx    → barre de progression d'étape
     Logo.tsx             → logo du rallye
-scripts/
-  render-one.ts          → rendu d'un segment unique
-  render-all.ts          → rendu en lot
 public/
   GPX/                   → traces et points GPX par étape
   markers/               → pins (départ/arrivée/zone publique)

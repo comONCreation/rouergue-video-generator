@@ -1,19 +1,15 @@
 {
-  "name": "rouergue-2026-overlay",
+  "name": "rouergue-2026",
   "version": "1.0.0",
-  "description": "Overlays alpha WRC-style pour la vidéo du tracé du 52e Rallye Aveyron Rouergue Occitanie",
+  "description": "Outil de génération de la vidéo du tracé du 52e Rallye Aveyron Rouergue Occitanie",
   "scripts": {
     "dev": "remotion studio",
     "build": "remotion bundle",
-    "render": "remotion render",
-    "render:all": "tsx scripts/render-all.ts",
-    "render:one": "tsx scripts/render-one.ts"
+    "render": "remotion render"
   },
   "dependencies": {
-    "@remotion/bundler": "4.0.459",
     "@remotion/cli": "4.0.459",
     "@remotion/google-fonts": "4.0.459",
-    "@remotion/renderer": "4.0.459",
     "mapbox-gl": "^3.23.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
@@ -22,7 +18,6 @@
   "devDependencies": {
     "@types/node": "24.7.1",
     "@types/react": "19.2.2",
-    "tsx": "4.20.6",
     "typescript": "5.9.3"
   }
 }

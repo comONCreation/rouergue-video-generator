@@ -2,19 +2,18 @@
 
 ## Project Structure & Module Organization
 
-This repository is a Remotion + React + TypeScript project for transparent rally video overlays. Source code lives in `src/`. `src/Root.tsx` registers compositions, `src/SegmentOverlay.tsx` is the main overlay, and reusable UI pieces are in `src/components/`. Rally timing and segment metadata are centralized in `src/data/segments.ts`; keep formatting helpers in `src/format.ts`, theme constants in `src/theme.ts`, and typography settings in `src/typography.ts`.
+This repository is a Remotion + React + TypeScript project for rally map videos. Source code lives in `src/`. `src/Root.tsx` registers compositions, `src/SegmentOverlay.tsx` is the main overlay, and reusable UI pieces are in `src/components/`. Rally timing and segment metadata are centralized in `src/data/segments.ts`; keep formatting helpers in `src/format.ts`, theme constants in `src/theme.ts`, and typography settings in `src/typography.ts`.
 
-Rendering utilities are in `scripts/`: `render-one.ts` renders one segment and `render-all.ts` renders batches. Static assets belong in `public/`. Generated videos go to `out/` and should not be treated as source.
+Use the standard Remotion CLI for rendering. Static assets belong in `public/`. Generated videos go to `out/` and should not be treated as source.
 
 ## Build, Test, and Development Commands
 
 - `npm install`: install locked dependencies from `package-lock.json`.
 - `npm run dev`: open Remotion Studio for local preview and composition selection.
 - `npm run build`: bundle the Remotion project.
-- `npm run render:one -- S1-ES1`: render one segment for quick iteration.
-- `npm run render:one -- S1-ES1 --duration 15`: render with a custom duration.
-- `npm run render:all -- --duration 45`: render every segment with a shared duration.
-- `npm run render:all -- --only S1-ES1,S2-ES15`: render a targeted segment list.
+- `npm run render -- S1-ES1`: render one segment with the Remotion CLI.
+- `npm run render -- FULL-S1`: render the full continuous stage 1 composition.
+- `npm run render -- S1-ES1 out/S1-ES1.mov`: render to an explicit output file.
 
 ## Coding Style & Naming Conventions
 
@@ -24,7 +23,7 @@ Segment IDs follow `S{stage}-ES{number}` and `S{stage}-L{number}`, for example `
 
 ## Testing Guidelines
 
-No automated test script is currently configured. Before submitting changes, run `npm run build` and preview affected compositions with `npm run dev`. For visual or timing changes, render at least one representative segment with `npm run render:one -- <segment-id>` and inspect the alpha overlay in `out/`.
+No automated test script is currently configured. Before submitting changes, run `npm run build` and preview affected compositions with `npm run dev`. For visual or timing changes, render at least one representative segment with `npm run render -- <segment-id>` and inspect the generated video in `out/`.
 
 ## Commit & Pull Request Guidelines
 
@@ -34,4 +33,4 @@ Pull requests should include a concise summary, affected segment IDs or componen
 
 ## Configuration Notes
 
-Optional per-segment durations can be placed in a root `durations.json` file. Keep local duration experiments out of committed source unless they are intended as canonical render settings.
+Render settings are centralized in `remotion.config.ts`. Default CLI exports use ProRes HQ `.mov` files in `out/`.

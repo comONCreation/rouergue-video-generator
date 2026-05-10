@@ -14,5 +14,5 @@
     "allowSyntheticDefaultImports": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["src", "scripts", "remotion.config.ts"]
+  "include": ["src", "remotion.config.ts"]
 }

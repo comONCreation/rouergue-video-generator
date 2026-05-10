@@ -34,6 +34,3 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
-
-# Durations override (généré localement à partir des clips AvoMap)
-durations.json

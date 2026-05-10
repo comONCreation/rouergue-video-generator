@@ -28,6 +28,7 @@ import {
 } from "../cameraPath";
 import { colors, layout, mapCamera, mapRoute } from "../theme";
 import { SEGMENTS, type Segment } from "../data/segments";
+import { configureMapboxForRendering } from "../mapboxRenderConfig";
 import { resolveMapboxStyle } from "../rally.config";
 import {
   findActiveSegmentIndex,
@@ -466,6 +467,7 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
           fps
         );
         cameraPathRef.current = cameraPath;
+        configureMapboxForRendering();
         mapboxgl.accessToken = token;
 
         const start = cameraPath[0];
