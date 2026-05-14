@@ -11,6 +11,7 @@ import {
 } from "remotion";
 import {
   distanceMeters,
+  elevationAtDistance,
   pointAtDistance,
   routeDistanceAtPoint,
   waypointCollection,
@@ -30,7 +31,12 @@ import {
 } from "../cameraPath";
 import { colors, layout, mapCamera, mapRoute } from "../theme";
 import { SEGMENTS, type Segment } from "../data/segments";
-import { configureMapboxForRendering } from "../mapboxRenderConfig";
+import {
+  applySmoothedCameraTerrainAltitude,
+  configureMapboxForRendering,
+  resolveSmoothedCameraTerrainAltitude,
+  type SmoothedCameraTerrainAltitudeState,
+} from "../mapboxRenderConfig";
 import { resolveMapboxStyle } from "../rally.config";
 import {
   findActiveSegmentIndex,
@@ -62,6 +68,7 @@ type CameraState = {
   distance: number;
   center: LonLat;
   bearing: number;
+  cameraTerrainAltitudeMeters: number | null;
   pitch: number;
   zoom: number;
   trackerPoint: LonLat;
@@ -89,6 +96,10 @@ const buildContinuousCameraPath = (
   );
   const centerAlpha = halfLifeAlpha(cinematic.centerHalfLifeSeconds, fps);
   const bearingAlpha = halfLifeAlpha(cinematic.bearingHalfLifeSeconds, fps);
+  const terrainAltitudeAlpha = halfLifeAlpha(
+    cinematic.terrainAltitudeHalfLifeSeconds,
+    fps
+  );
   const pitchAlpha = halfLifeAlpha(cinematic.pitchHalfLifeSeconds, fps);
   const zoomAlpha = halfLifeAlpha(cinematic.zoomHalfLifeSeconds, fps);
 
@@ -97,6 +108,7 @@ const buildContinuousCameraPath = (
     coordinates: route.coordinates,
     cumulativeDistances: route.cumulativeDistances,
     totalDistanceMeters: route.totalDistanceMeters,
+    elevations: route.elevations,
     waypoints: [],
   };
 
@@ -111,14 +123,16 @@ const buildContinuousCameraPath = (
   const initialSegment = findActiveSegmentSpan(route, 0).segment;
   let pitch = pitchForSegment(initialSegment);
   let zoom = zoomForSegment(initialSegment);
+  let terrainAltitude = elevationAtDistance(routeAsParsed, centerLead);
 
   for (let frame = 0; frame < durationInFrames; frame++) {
     const time = frame / fps;
     const distance = getDistanceAtTime(timeline, time);
     const trackerPoint = pointAtDistance(routeAsParsed, distance).point;
+    const targetCenterDistance = distance + centerLead;
     const targetCenter = pointAtDistance(
       routeAsParsed,
-      distance + centerLead
+      targetCenterDistance
     ).point;
     const targetBearing = getSmoothedBearing(
       routeAsParsed,
@@ -129,20 +143,40 @@ const buildContinuousCameraPath = (
     const activeSegment = findActiveSegmentSpan(route, distance).segment;
     const targetPitch = pitchForSegment(activeSegment);
     const targetZoom = zoomForSegment(activeSegment);
+    const targetTerrainAltitude = elevationAtDistance(
+      routeAsParsed,
+      targetCenterDistance
+    );
 
     if (frame === 0) {
       center = targetCenter;
       bearing = targetBearing;
       pitch = targetPitch;
       zoom = targetZoom;
+      terrainAltitude = targetTerrainAltitude;
     } else {
       center = lerpLonLat(center, targetCenter, centerAlpha);
       bearing = lerpBearing(bearing, targetBearing, bearingAlpha);
       pitch = pitch + (targetPitch - pitch) * pitchAlpha;
       zoom = zoom + (targetZoom - zoom) * zoomAlpha;
+      if (terrainAltitude === null) {
+        terrainAltitude = targetTerrainAltitude;
+      } else if (targetTerrainAltitude !== null) {
+        terrainAltitude =
+          terrainAltitude +
+          (targetTerrainAltitude - terrainAltitude) * terrainAltitudeAlpha;
+      }
     }
 
-    states.push({ distance, center, bearing, pitch, zoom, trackerPoint });
+    states.push({
+      distance,
+      center,
+      bearing,
+      cameraTerrainAltitudeMeters: terrainAltitude,
+      pitch,
+      zoom,
+      trackerPoint,
+    });
   }
 
   return states;
@@ -406,11 +440,18 @@ const updateMapFrame = (
   cameraState: CameraState,
   clusters: WaypointCluster[],
   lastActiveSegmentIndexRef: { current: number },
-  markerDistancesRef: { current: number[] }
+  markerDistancesRef: { current: number[] },
+  frame: number,
+  fps: number,
+  terrainAltitudeState: SmoothedCameraTerrainAltitudeState
 ) => {
   const activeSegmentIndex = findActiveSegmentIndex(route, cameraState.distance);
   const activeSpan = route.segments[activeSegmentIndex];
 
+  applySmoothedCameraTerrainAltitude(
+    map,
+    terrainAltitudeState.altitudeMeters ?? cameraState.cameraTerrainAltitudeMeters
+  );
   map.jumpTo({
     center: cameraState.center,
     zoom: cameraState.zoom,
@@ -424,6 +465,19 @@ const updateMapFrame = (
     },
     retainPadding: false,
   });
+  const terrainAltitude = resolveSmoothedCameraTerrainAltitude({
+    map,
+    center: cameraState.center,
+    fallbackAltitudeMeters: cameraState.cameraTerrainAltitudeMeters,
+    frame,
+    fps,
+    halfLifeSeconds: mapCamera.cinematic.terrainAltitudeHalfLifeSeconds,
+    state: terrainAltitudeState,
+  });
+  applySmoothedCameraTerrainAltitude(
+    map,
+    terrainAltitude
+  );
 
   setGeoJsonData(
     map,
@@ -471,6 +525,10 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
   const cameraPathRef = useRef<CameraState[]>([]);
   const lastActiveSegmentIndexRef = useRef<number>(-1);
   const markerDistancesRef = useRef<number[]>([]);
+  const terrainAltitudeStateRef = useRef<SmoothedCameraTerrainAltitudeState>({
+    frame: null,
+    altitudeMeters: null,
+  });
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -546,7 +604,10 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
               start,
               waypointClusters,
               lastActiveSegmentIndexRef,
-              markerDistancesRef
+              markerDistancesRef,
+              0,
+              fps,
+              terrainAltitudeStateRef.current
             );
 
             map.once("idle", () => {
@@ -576,6 +637,7 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
       mapRef.current?.remove();
       mapRef.current = null;
       cameraPathRef.current = [];
+      terrainAltitudeStateRef.current = { frame: null, altitudeMeters: null };
     };
   }, [durationInFrames, fps, route, timeline, waypointClusters]);
 
@@ -604,7 +666,10 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
       cameraState,
       waypointClusters,
       lastActiveSegmentIndexRef,
-      markerDistancesRef
+      markerDistancesRef,
+      frame,
+      fps,
+      terrainAltitudeStateRef.current
     );
     map.triggerRepaint();
 

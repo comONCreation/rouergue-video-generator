@@ -24,6 +24,7 @@ export type StagedWaypoint = GpxWaypoint & { segmentId: string };
 
 export type StagedRoute = {
   coordinates: LonLat[];
+  elevations: Array<number | null>;
   cumulativeDistances: number[];
   totalDistanceMeters: number;
   segments: StagedSegmentSpan[];
@@ -54,6 +55,7 @@ export const loadStagedRoute = async (
   );
 
   const coordinates: LonLat[] = [];
+  const elevations: Array<number | null> = [];
   const segmentBoundsByIndex: {
     segment: Segment;
     startIndex: number;
@@ -62,11 +64,13 @@ export const loadStagedRoute = async (
 
   for (const { segment, route } of parsed) {
     const startIndex = coordinates.length;
-    for (const coord of route.coordinates) {
+    for (let i = 0; i < route.coordinates.length; i++) {
+      const coord = route.coordinates[i];
       const last = coordinates[coordinates.length - 1];
       if (last && distanceMeters(last, coord) < mapRoute.thresholds.dedupeMeters)
         continue;
       coordinates.push(coord);
+      elevations.push(route.elevations?.[i] ?? null);
     }
     const endIndex = coordinates.length - 1;
     if (endIndex >= startIndex) {
@@ -114,6 +118,7 @@ export const loadStagedRoute = async (
 
   return {
     coordinates,
+    elevations,
     cumulativeDistances,
     totalDistanceMeters: cumulativeDistances[cumulativeDistances.length - 1],
     segments: segmentSpans,

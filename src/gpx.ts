@@ -25,6 +25,7 @@ export type ParsedGpx = {
   coordinates: LonLat[];
   cumulativeDistances: number[];
   totalDistanceMeters: number;
+  elevations?: Array<number | null>;
   waypoints: GpxWaypoint[];
 };
 
@@ -53,6 +54,13 @@ const readLonLat = (node: Element): LonLat | null => {
   }
 
   return [lon, lat];
+};
+
+const readElevation = (node: Element): number | null => {
+  const text = getChildText(node, "ele");
+  if (!text) return null;
+  const value = Number(text);
+  return Number.isFinite(value) ? value : null;
 };
 
 const classifyWaypoint = (name: string, symbol: string): WaypointKind => {
@@ -123,9 +131,24 @@ export const parseGpx = (gpxText: string): ParsedGpx => {
     getChildText(getElements(document, "trk")[0] ?? document.documentElement, "name") ||
     "Trace GPX";
 
-  const coordinates = getElements(document, "trkpt")
-    .map(readLonLat)
-    .filter((coordinate): coordinate is LonLat => coordinate !== null);
+  const trackPoints = getElements(document, "trkpt")
+    .map((trackPoint) => {
+      const coordinates = readLonLat(trackPoint);
+      if (!coordinates) return null;
+      return {
+        coordinates,
+        elevation: readElevation(trackPoint),
+      };
+    })
+    .filter(
+      (
+        trackPoint
+      ): trackPoint is { coordinates: LonLat; elevation: number | null } =>
+        trackPoint !== null
+    );
+
+  const coordinates = trackPoints.map((trackPoint) => trackPoint.coordinates);
+  const elevations = trackPoints.map((trackPoint) => trackPoint.elevation);
 
   if (coordinates.length < 2) {
     throw new Error("Le GPX ne contient pas assez de points de trace.");
@@ -152,10 +175,49 @@ export const parseGpx = (gpxText: string): ParsedGpx => {
   return {
     name: trackName,
     coordinates,
+    elevations,
     cumulativeDistances,
     totalDistanceMeters: cumulativeDistances[cumulativeDistances.length - 1],
     waypoints,
   };
+};
+
+export const elevationAtDistance = (
+  route: Pick<
+    ParsedGpx,
+    "cumulativeDistances" | "elevations" | "totalDistanceMeters"
+  >,
+  distance: number
+): number | null => {
+  const elevations = route.elevations;
+  if (!elevations || elevations.length < 2) return null;
+
+  const target = Math.max(0, Math.min(route.totalDistanceMeters, distance));
+  const { cumulativeDistances } = route;
+
+  let low = 1;
+  let high = cumulativeDistances.length - 1;
+
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+    if (cumulativeDistances[mid] < target) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+
+  const index = low;
+  const from = elevations[index - 1];
+  const to = elevations[index];
+  if (from === null || to === null) return from ?? to ?? null;
+
+  const segmentStartDistance = cumulativeDistances[index - 1];
+  const segmentDistance = cumulativeDistances[index] - segmentStartDistance;
+  const localProgress =
+    segmentDistance === 0 ? 0 : (target - segmentStartDistance) / segmentDistance;
+
+  return from + (to - from) * localProgress;
 };
 
 export const pointAtDistance = (route: ParsedGpx, distance: number) => {

@@ -10,6 +10,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  elevationAtDistance,
   parseGpx,
   pointAtDistance,
   routeCoordinatesUntilDistance,
@@ -31,7 +32,12 @@ import {
 } from "../cameraPath";
 import { colors, layout, mapCamera } from "../theme";
 import { SEGMENTS, type Segment } from "../data/segments";
-import { configureMapboxForRendering } from "../mapboxRenderConfig";
+import {
+  applySmoothedCameraTerrainAltitude,
+  configureMapboxForRendering,
+  resolveSmoothedCameraTerrainAltitude,
+  type SmoothedCameraTerrainAltitudeState,
+} from "../mapboxRenderConfig";
 import { resolveMapboxStyle } from "../rally.config";
 import { MapFallback } from "./MapFallback";
 import {
@@ -51,6 +57,7 @@ type CameraState = {
   distance: number;
   center: LonLat;
   bearing: number;
+  cameraTerrainAltitudeMeters: number | null;
   trackerPoint: LonLat;
 };
 
@@ -189,6 +196,10 @@ const buildCinematicCameraPath = (
   );
   const centerAlpha = halfLifeAlpha(cinematic.centerHalfLifeSeconds, fps);
   const bearingAlpha = halfLifeAlpha(cinematic.bearingHalfLifeSeconds, fps);
+  const terrainAltitudeAlpha = halfLifeAlpha(
+    cinematic.terrainAltitudeHalfLifeSeconds,
+    fps
+  );
   const states: CameraState[] = [];
   let center = pointAtDistance(route, centerLead).point;
   let bearing = getSmoothedBearing(
@@ -197,31 +208,46 @@ const buildCinematicCameraPath = (
     bearingWindow,
     cinematic.bearingWindow.sampleCount
   );
+  let terrainAltitude = elevationAtDistance(route, centerLead);
 
   for (let frame = 0; frame < durationInFrames; frame++) {
     const progress = getProgress(frame, durationInFrames, fps);
     const distance = route.totalDistanceMeters * progress;
     const trackerPoint = pointAtDistance(route, distance).point;
-    const targetCenter = pointAtDistance(route, distance + centerLead).point;
+    const targetCenterDistance = distance + centerLead;
+    const targetCenter = pointAtDistance(route, targetCenterDistance).point;
     const targetBearing = getSmoothedBearing(
       route,
       distance + bearingLead,
       bearingWindow,
       cinematic.bearingWindow.sampleCount
     );
+    const targetTerrainAltitude = elevationAtDistance(
+      route,
+      targetCenterDistance
+    );
 
     if (frame === 0) {
       center = targetCenter;
       bearing = targetBearing;
+      terrainAltitude = targetTerrainAltitude;
     } else {
       center = lerpLonLat(center, targetCenter, centerAlpha);
       bearing = lerpBearing(bearing, targetBearing, bearingAlpha);
+      if (terrainAltitude === null) {
+        terrainAltitude = targetTerrainAltitude;
+      } else if (targetTerrainAltitude !== null) {
+        terrainAltitude =
+          terrainAltitude +
+          (targetTerrainAltitude - terrainAltitude) * terrainAltitudeAlpha;
+      }
     }
 
     states.push({
       distance,
       center,
       bearing,
+      cameraTerrainAltitudeMeters: terrainAltitude,
       trackerPoint,
     });
   }
@@ -274,8 +300,15 @@ const updateMapFrame = (
   route: ParsedGpx,
   segment: Segment,
   cameraState: CameraState,
-  sortedMarkerDistances: number[]
+  sortedMarkerDistances: number[],
+  frame: number,
+  fps: number,
+  terrainAltitudeState: SmoothedCameraTerrainAltitudeState
 ) => {
+  applySmoothedCameraTerrainAltitude(
+    map,
+    terrainAltitudeState.altitudeMeters ?? cameraState.cameraTerrainAltitudeMeters
+  );
   map.jumpTo({
     center: cameraState.center,
     zoom: getZoom(segment),
@@ -289,6 +322,19 @@ const updateMapFrame = (
     },
     retainPadding: false,
   });
+  const terrainAltitude = resolveSmoothedCameraTerrainAltitude({
+    map,
+    center: cameraState.center,
+    fallbackAltitudeMeters: cameraState.cameraTerrainAltitudeMeters,
+    frame,
+    fps,
+    halfLifeSeconds: mapCamera.cinematic.terrainAltitudeHalfLifeSeconds,
+    state: terrainAltitudeState,
+  });
+  applySmoothedCameraTerrainAltitude(
+    map,
+    terrainAltitude
+  );
 
   setGeoJsonData(
     map,
@@ -314,6 +360,10 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
   const routeRef = useRef<ParsedGpx | null>(null);
   const cameraPathRef = useRef<CameraState[]>([]);
   const markerDistancesRef = useRef<number[]>([]);
+  const terrainAltitudeStateRef = useRef<SmoothedCameraTerrainAltitudeState>({
+    frame: null,
+    altitudeMeters: null,
+  });
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -390,7 +440,10 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
               route,
               segment,
               start,
-              markerDistancesRef.current
+              markerDistancesRef.current,
+              0,
+              fps,
+              terrainAltitudeStateRef.current
             );
 
             map.once("idle", () => {
@@ -420,6 +473,7 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
       mapRef.current?.remove();
       mapRef.current = null;
       cameraPathRef.current = [];
+      terrainAltitudeStateRef.current = { frame: null, altitudeMeters: null };
     };
   }, [durationInFrames, fps, gpxPath, segment]);
 
@@ -448,7 +502,10 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
       route,
       segment,
       cameraState,
-      markerDistancesRef.current
+      markerDistancesRef.current,
+      frame,
+      fps,
+      terrainAltitudeStateRef.current
     );
     map.triggerRepaint();
 

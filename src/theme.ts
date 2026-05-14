@@ -70,6 +70,9 @@ export const mapCamera = {
     // (ES ↔ liaison). Évite la cassure visuelle d'un saut instantané.
     pitchHalfLifeSeconds: 2,
     zoomHalfLifeSeconds: 2,
+    // Lissage vertical de la caméra : amortit les variations d'altitude du
+    // terrain sans modifier l'exagération du relief dans le style Mapbox.
+    terrainAltitudeHalfLifeSeconds: 2,
   },
   // Vidéos par segment unitaire (S1-ES1, S1-L02, …).
   segmentVideo: {

@@ -9,8 +9,8 @@
 export const RALLY = {
   edition: 52,
   year: 2026,
-  shortName: "Rallye Aveyron Rouergue Occitanie",
-  fullName: "52e Rallye Aveyron Rouergue Occitanie",
+  shortName: "Rallye Rouergue Rodez Aveyron Occitanie",
+  fullName: "52e Rallye Rouergue Rodez Aveyron Occitanie",
   stageDates: [
     "Vendredi 10 juillet 2026",
     "Samedi 11 juillet 2026",
