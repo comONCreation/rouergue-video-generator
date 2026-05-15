@@ -1,5 +1,3 @@
-import mapboxgl from "mapbox-gl";
-
 type TerrainTransform = {
   _calcMatrices?: () => void;
   _centerAltitude?: number;
@@ -11,16 +9,6 @@ type TerrainTransform = {
 export type SmoothedCameraTerrainAltitudeState = {
   frame: number | null;
   altitudeMeters: number | null;
-};
-
-let configured = false;
-
-export const configureMapboxForRendering = () => {
-  if (configured) return;
-  configured = true;
-
-  mapboxgl.workerCount = 1;
-  mapboxgl.maxParallelImageRequests = 8;
 };
 
 const getNumericTerrainExaggeration = (map: mapboxgl.Map) => {

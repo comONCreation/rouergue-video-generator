@@ -34,7 +34,6 @@ import { colors, layout, mapCamera } from "../theme";
 import { SEGMENTS, type Segment } from "../data/segments";
 import {
   applySmoothedCameraTerrainAltitude,
-  configureMapboxForRendering,
   resolveSmoothedCameraTerrainAltitude,
   type SmoothedCameraTerrainAltitudeState,
 } from "../mapboxRenderConfig";
@@ -411,7 +410,6 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
           fps
         );
         cameraPathRef.current = cameraPath;
-        configureMapboxForRendering();
         mapboxgl.accessToken = token;
 
         const start = cameraPath[0];

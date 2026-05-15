@@ -33,7 +33,6 @@ import { colors, layout, mapCamera, mapRoute } from "../theme";
 import { SEGMENTS, type Segment } from "../data/segments";
 import {
   applySmoothedCameraTerrainAltitude,
-  configureMapboxForRendering,
   resolveSmoothedCameraTerrainAltitude,
   type SmoothedCameraTerrainAltitudeState,
 } from "../mapboxRenderConfig";
@@ -572,7 +571,6 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
           fps
         );
         cameraPathRef.current = cameraPath;
-        configureMapboxForRendering();
         mapboxgl.accessToken = token;
 
         const start = cameraPath[0];
