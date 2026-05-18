@@ -35,11 +35,11 @@ export const layout = {
 export const mapCamera = {
   zoom: {
     es: 14.5,
-    liaison: 13.5,
+    liaison: 14,
   },
   pitch: {
     es: 50,
-    liaison: 60,
+    liaison: 55,
   },
   padding: {
     top: 96,
@@ -81,8 +81,8 @@ export const mapCamera = {
     introOutroHoldSeconds: 3,
   },
   cameraSpeed: {
-    es: 2500,
-    liaison: 4500,
+    es: 2000,
+    liaison: 5000,
   },
   // Durée fixe de l'accélération et de la décélération caméra. Le reste du
   // transit se fait à vitesse constante, pour éviter qu'un long tracé garde
@@ -104,7 +104,7 @@ export const mapCamera = {
   renderTimeouts: {
     loadMapMs: 90000,
     frameMs: 5000,
-    frameFallbackMs: 900,
+    frameFallbackMs: 2500,
   },
 };
 

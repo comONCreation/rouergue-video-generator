@@ -572,6 +572,7 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
         );
         cameraPathRef.current = cameraPath;
         mapboxgl.accessToken = token;
+        mapboxgl.maxParallelImageRequests = 32;
 
         const start = cameraPath[0];
         const map = new mapboxgl.Map({
@@ -583,6 +584,8 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
           pitch: start.pitch,
           interactive: false,
           preserveDrawingBuffer: true,
+          fadeDuration: 1000,
+          refreshExpiredTiles: false,
           logoPosition: "bottom-right",
           attributionControl: false,
         });
@@ -634,7 +637,6 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
     return () => {
       cancelled = true;
       complete();
-      mapRef.current?.remove();
       mapRef.current = null;
       cameraPathRef.current = [];
       terrainAltitudeStateRef.current = { frame: null, altitudeMeters: null };

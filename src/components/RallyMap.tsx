@@ -411,6 +411,7 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
         );
         cameraPathRef.current = cameraPath;
         mapboxgl.accessToken = token;
+        mapboxgl.maxParallelImageRequests = 32;
 
         const start = cameraPath[0];
         const map = new mapboxgl.Map({
@@ -422,6 +423,8 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
           pitch: getPitch(segment),
           interactive: false,
           preserveDrawingBuffer: true,
+          fadeDuration: 1000,
+          refreshExpiredTiles: false,
           logoPosition: "bottom-right",
           attributionControl: false,
         });
@@ -470,7 +473,6 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
     return () => {
       cancelled = true;
       complete();
-      mapRef.current?.remove();
       mapRef.current = null;
       cameraPathRef.current = [];
       terrainAltitudeStateRef.current = { frame: null, altitudeMeters: null };
