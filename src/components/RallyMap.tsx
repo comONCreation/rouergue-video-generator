@@ -422,6 +422,8 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
           pitch: getPitch(segment),
           interactive: false,
           preserveDrawingBuffer: true,
+          logoPosition: "bottom-right",
+          attributionControl: false,
         });
 
         mapRef.current = map;

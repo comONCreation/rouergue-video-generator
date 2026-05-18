@@ -583,6 +583,8 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
           pitch: start.pitch,
           interactive: false,
           preserveDrawingBuffer: true,
+          logoPosition: "bottom-right",
+          attributionControl: false,
         });
 
         mapRef.current = map;
