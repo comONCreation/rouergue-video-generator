@@ -36,7 +36,7 @@ export const layout = {
 export const stageIntro = {
   // Le début d'étape dure: card.durationSeconds + flyInSeconds.
   // La card reste fixe, puis la caméra fait son fly-in vers le tracé.
-  flyInSeconds: 10,
+  flyInSeconds: 3,
   plaque: {
     durationSeconds: 6,
     enterSeconds: 0.45,

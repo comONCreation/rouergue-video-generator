@@ -23,7 +23,7 @@ import {
 } from "../gpx";
 import {
   clamp,
-  easeOutCubic,
+  easeInOutCubic,
   getSmoothedBearing,
   getSmoothingWindow,
   halfLifeAlpha,
@@ -197,7 +197,7 @@ const buildContinuousCameraPath = (
 
     if (stageStartFrames > 1 && frame < stageStartFrames) {
       const flyInFrame = Math.max(0, frame - introCardFrames);
-      const introProgress = easeOutCubic(
+      const introProgress = easeInOutCubic(
         clamp(flyInFrame / flyInFrames, 0, 1)
       );
       const introStartBearing =
