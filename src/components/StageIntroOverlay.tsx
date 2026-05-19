@@ -5,7 +5,7 @@ import {
   getStageTotalKm,
 } from "../data/segments";
 import { formatKm } from "../format";
-import { colors, fonts } from "../theme";
+import { colors, fonts, stageIntro } from "../theme";
 import {
   bodyStyle,
   labelMicroStyle,
@@ -20,10 +20,6 @@ type Props = {
   durationFrames: number;
 };
 
-const ENTER_SECONDS = 0.5;
-const EXIT_SECONDS = 0.55;
-const START_SCALE = 0.965;
-
 const StageStat: React.FC<{
   label: string;
   value: string;
@@ -32,10 +28,10 @@ const StageStat: React.FC<{
   <div
     style={{
       background: "rgba(0, 0, 0, 0.28)",
-      padding: "22px 26px",
+      padding: stageIntro.card.statPadding,
       display: "flex",
       flexDirection: "column",
-      gap: 8,
+      gap: stageIntro.card.statGap,
       minWidth: 0,
     }}
   >
@@ -43,7 +39,7 @@ const StageStat: React.FC<{
     <span
       style={{
         ...valueStyle,
-        fontSize: 34,
+        fontSize: stageIntro.card.statValueFontSize,
         whiteSpace: "nowrap",
       }}
     >
@@ -64,7 +60,10 @@ export const StageIntroOverlay: React.FC<Props> = ({
   const firstSegment = stageSegments[0];
   const stageTotalKm = getStageTotalKm(stage);
 
-  const exitStart = Math.max(0, durationFrames - Math.round(EXIT_SECONDS * fps));
+  const exitStart = Math.max(
+    0,
+    durationFrames - Math.round(stageIntro.card.exitSeconds * fps)
+  );
   const exitOpacity = interpolate(
     frame,
     [exitStart, durationFrames],
@@ -73,39 +72,34 @@ export const StageIntroOverlay: React.FC<Props> = ({
   );
   const enterProgress = interpolate(
     frame,
-    [0, Math.round(ENTER_SECONDS * fps)],
+    [0, Math.round(stageIntro.card.enterSeconds * fps)],
     [0, 1],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
-  const scale = START_SCALE + (1 - START_SCALE) * enterProgress;
+  const scale =
+    stageIntro.card.startScale +
+    (stageIntro.card.endScale - stageIntro.card.startScale) *
+      enterProgress;
 
   return (
     <AbsoluteFill style={{ pointerEvents: "none", opacity: exitOpacity }}>
       <AbsoluteFill
         style={{
-          opacity: enterProgress,
-          backdropFilter: "blur(10px)",
-          background:
-            "radial-gradient(circle at 50% 46%, rgba(7, 17, 31, 0.34) 0%, rgba(7, 17, 31, 0.58) 56%, rgba(7, 17, 31, 0.76) 100%)",
-        }}
-      />
-      <AbsoluteFill
-        style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: 96,
+          padding: stageIntro.card.padding,
           boxSizing: "border-box",
         }}
       >
         <div
           style={{
-            width: 820,
+            width: stageIntro.card.width,
             transform: `scale(${scale})`,
             opacity: enterProgress,
             background: `linear-gradient(180deg, ${colors.panelBgTop}, ${colors.panelBgBottom})`,
-            borderLeft: `6px solid ${colors.orange}`,
-            boxShadow: `0 32px 90px ${colors.shadow}`,
+            borderLeft: `${stageIntro.card.borderWidth}px solid ${colors.orange}`,
+            boxShadow: `${stageIntro.card.shadow} ${colors.shadow}`,
             color: colors.white,
             fontFamily: fonts.display,
             overflow: "hidden",
@@ -113,22 +107,28 @@ export const StageIntroOverlay: React.FC<Props> = ({
         >
           <div
             style={{
-              padding: "52px 58px 42px",
+              padding: stageIntro.card.contentPadding,
               display: "flex",
               flexDirection: "column",
-              gap: 18,
+              gap: stageIntro.card.contentGap,
             }}
           >
-            <AnimatedBlock delay={10} offsetY={18}>
+            <AnimatedBlock
+              delay={stageIntro.card.delays.label}
+              offsetY={stageIntro.card.animationOffsetY}
+            >
               <div style={labelStyle}>Début d'étape</div>
             </AnimatedBlock>
 
-            <AnimatedBlock delay={18} offsetY={18}>
+            <AnimatedBlock
+              delay={stageIntro.card.delays.title}
+              offsetY={stageIntro.card.animationOffsetY}
+            >
               <div
                 style={{
                   fontFamily: fonts.display,
                   fontWeight: 800,
-                  fontSize: 112,
+                  fontSize: stageIntro.card.titleFontSize,
                   lineHeight: 0.95,
                   letterSpacing: 0,
                   color: colors.white,
@@ -138,11 +138,14 @@ export const StageIntroOverlay: React.FC<Props> = ({
               </div>
             </AnimatedBlock>
 
-            <AnimatedBlock delay={30} offsetY={18}>
+            <AnimatedBlock
+              delay={stageIntro.card.delays.date}
+              offsetY={stageIntro.card.animationOffsetY}
+            >
               <div
                 style={{
                   ...bodyStyle,
-                  fontSize: 26,
+                  fontSize: stageIntro.card.dateFontSize,
                   color: colors.whiteSubtle,
                 }}
               >
@@ -151,12 +154,15 @@ export const StageIntroOverlay: React.FC<Props> = ({
             </AnimatedBlock>
           </div>
 
-          <AnimatedBlock delay={42} offsetY={18}>
+          <AnimatedBlock
+            delay={stageIntro.card.delays.stats}
+            offsetY={stageIntro.card.animationOffsetY}
+          >
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
-                gap: 1,
+                gap: stageIntro.card.gridGap,
                 background:
                   "linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.22), rgba(255,255,255,0.06))",
               }}
@@ -172,7 +178,7 @@ export const StageIntroOverlay: React.FC<Props> = ({
 
           <div
             style={{
-              height: 5,
+              height: stageIntro.card.accentBarHeight,
               background: `linear-gradient(90deg, ${colors.orange}, rgba(245, 158, 32, 0))`,
             }}
           />

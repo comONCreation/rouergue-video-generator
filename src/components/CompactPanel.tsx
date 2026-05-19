@@ -37,7 +37,7 @@ export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
         opacity: visibility,
         transform: `translateY(${(1 - visibility) * 30}px)`,
         background: `linear-gradient(180deg, ${colors.panelBgTop}, ${colors.panelBgBottom})`,
-        backdropFilter: "blur(14px)",
+        backdropFilter: `blur(${layout.panelBlurPx}px)`,
         borderLeft: `4px solid ${colors.orange}`,
         boxShadow: `0 8px 24px ${colors.shadow}`,
         overflow: "hidden",

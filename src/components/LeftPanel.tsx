@@ -64,7 +64,7 @@ export const LeftPanel: React.FC<Props> = ({ segment, hide }) => {
         transform: `translateX(${translateX}px)`,
         opacity,
         background: `linear-gradient(180deg, ${colors.panelBgTop}, ${colors.panelBgBottom})`,
-        backdropFilter: "blur(14px)",
+        backdropFilter: `blur(${layout.panelBlurPx}px)`,
         boxShadow: `4px 0 24px ${colors.shadow}`,
         padding: layout.panelPadding,
         display: "flex",

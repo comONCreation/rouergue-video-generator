@@ -5,7 +5,7 @@ import {
 } from "./gpx";
 import { easedTravelProgress } from "./cameraPath";
 import type { Segment } from "./data/segments";
-import { mapCamera, mapRoute } from "./theme";
+import { mapCamera, mapRoute, stageIntro } from "./theme";
 import type { StagedRoute, StagedSegmentSpan } from "./stagedRoute";
 
 export type KeyPointType =
@@ -57,10 +57,9 @@ const TYPE_PRIORITY: Record<KeyPointType, number> = {
 };
 
 const HOLD_KEY_BY_TYPE: Record<
-  KeyPointType,
+  Exclude<KeyPointType, "stage-start">,
   keyof typeof mapCamera.stageVideo.keyPointHolds
 > = {
-  "stage-start": "stageStart",
   "stage-finish": "stageFinish",
   "es-start": "esStart",
   "es-finish": "esFinish",
@@ -68,8 +67,12 @@ const HOLD_KEY_BY_TYPE: Record<
   regrouping: "regrouping",
 };
 
-const holdSecondsForType = (type: KeyPointType): number =>
-  mapCamera.stageVideo.keyPointHolds[HOLD_KEY_BY_TYPE[type]];
+const holdSecondsForType = (type: KeyPointType): number => {
+  if (type === "stage-start") {
+    return stageIntro.card.durationSeconds + stageIntro.flyInSeconds;
+  }
+  return mapCamera.stageVideo.keyPointHolds[HOLD_KEY_BY_TYPE[type]];
+};
 
 const findDistanceForCoordinateInSpan = (
   route: StagedRoute,
@@ -309,7 +312,7 @@ export const getStageIntroHoldSeconds = (timeline: StageTimeline): number => {
 
 export const getStageIntroCardSeconds = (timeline: StageTimeline): number => {
   const holdSeconds = getStageIntroHoldSeconds(timeline);
-  return Math.min(holdSeconds, mapCamera.stageVideo.introCardSeconds);
+  return Math.min(holdSeconds, stageIntro.card.durationSeconds);
 };
 
 export const getActiveContext = (

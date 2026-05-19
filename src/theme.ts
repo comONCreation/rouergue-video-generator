@@ -23,6 +23,7 @@ export const layout = {
   fps: 60,
   panelWidth: 620,
   panelPadding: 36,
+  panelBlurPx: 14,
   // Compact mode (après minimisation)
   compactWidth: 700,
   compactPadding: 20,
@@ -30,6 +31,58 @@ export const layout = {
   // Timing (secondes)
   minimizeAtSeconds: 6,
   minimizeDurationSeconds: 0.6,
+};
+
+export const stageIntro = {
+  // Le début d'étape dure: card.durationSeconds + flyInSeconds.
+  // La card reste fixe, puis la caméra fait son fly-in vers le tracé.
+  flyInSeconds: 10,
+  plaque: {
+    durationSeconds: 6,
+    enterSeconds: 0.45,
+    exitSeconds: 0.55,
+    startScale: 0.9,
+    endScale: 1.015,
+    introWidth: 960,
+    introShadow: "0 34px 72px",
+    bugTop: 34,
+    bugRight: 42,
+    bugWidth: 280,
+    bugShadow: "0 10px 24px rgba(0, 0, 0, 0.34)",
+  },
+  card: {
+    durationSeconds: 6,
+    enterSeconds: 0.5,
+    exitSeconds: 0.55,
+    startScale: 0.965,
+    endScale: 1,
+    width: 820,
+    padding: 96,
+    borderWidth: 6,
+    shadow: "0 32px 90px",
+    contentPadding: "52px 58px 42px",
+    contentGap: 18,
+    titleFontSize: 112,
+    dateFontSize: 26,
+    statPadding: "22px 26px",
+    statGap: 8,
+    statValueFontSize: 34,
+    gridGap: 1,
+    accentBarHeight: 5,
+    animationOffsetY: 18,
+    delays: {
+      label: 10,
+      title: 18,
+      date: 30,
+      stats: 42,
+    },
+  },
+  backdrop: {
+    exitSeconds: 0.55,
+    blurPx: 10,
+    background:
+      "radial-gradient(circle at 50% 46%, rgba(7, 17, 31, 0.30) 0%, rgba(7, 17, 31, 0.56) 56%, rgba(7, 17, 31, 0.74) 100%)",
+  },
 };
 
 export const mapCamera = {
@@ -93,14 +146,12 @@ export const mapCamera = {
     // Durée des pauses caméra à chaque key point intermédiaire ; entre deux
     // key points, la caméra avance en transit à `cameraSpeed`.
     keyPointHolds: {
-      stageStart: 6,
       stageFinish: 4,
       esStart: 4,
       esFinish: 4,
       assistance: 3,
       regrouping: 3,
     },
-    introCardSeconds: 3.2,
     // Pose caméra au début du fly-in (juste avant que la carte s'aligne sur la
     // trajectoire). Décalée du bearing/pitch/zoom cibles ; les minima évitent
     // une pose finale trop plongeante ou trop large sur les courtes étapes.
@@ -112,6 +163,7 @@ export const mapCamera = {
       minZoom: 10.8,
     },
   },
+  fadeDurationMs: 1000,
   renderTimeouts: {
     loadMapMs: 90000,
     frameMs: 5000,

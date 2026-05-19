@@ -4,6 +4,7 @@ import { RallyMap } from "./components/RallyMap";
 import { getGpxPathForSegment } from "./data/gpxFiles";
 import { getSegmentById } from "./data/segments";
 import { SegmentOverlay } from "./SegmentOverlay";
+import { PlaqueBug } from "./components/Plaque";
 
 export type SegmentMapVideoProps = {
   segmentId: string;
@@ -60,6 +61,7 @@ export const SegmentMapVideo: React.FC<SegmentMapVideoProps> = ({
         <MissingGpx segmentId={segment.id} />
       )}
       <SegmentOverlay segmentId={segment.id} />
+      <PlaqueBug />
     </AbsoluteFill>
   );
 };

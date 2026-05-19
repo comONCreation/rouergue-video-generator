@@ -8,7 +8,7 @@ import {
 } from "./data/segments";
 import { loadStagedRoute } from "./stagedRoute";
 import { buildStageTimeline } from "./stageTimeline";
-import { layout } from "./theme";
+import { layout, stageIntro } from "./theme";
 
 type FullStageProps = {
   stage: 1 | 2;
@@ -24,7 +24,11 @@ const calculateFullStageMetadata = async ({
   const timeline = buildStageTimeline(route);
 
   return {
-    durationInFrames: Math.ceil(timeline.totalSeconds * layout.fps),
+    durationInFrames:
+      Math.ceil(timeline.totalSeconds * layout.fps) +
+      (props.stage === 1
+        ? Math.round(stageIntro.plaque.durationSeconds * layout.fps)
+        : 0),
   };
 };
 

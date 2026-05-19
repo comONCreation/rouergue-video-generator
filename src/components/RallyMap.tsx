@@ -423,7 +423,7 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
           pitch: getPitch(segment),
           interactive: false,
           preserveDrawingBuffer: true,
-          fadeDuration: 1000,
+          fadeDuration: mapCamera.fadeDurationMs,
           refreshExpiredTiles: false,
           logoPosition: "bottom-right",
           attributionControl: false,

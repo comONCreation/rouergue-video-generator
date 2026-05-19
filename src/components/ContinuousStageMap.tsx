@@ -31,7 +31,7 @@ import {
   lerpLonLat,
   pointFeature,
 } from "../cameraPath";
-import { colors, layout, mapCamera, mapRoute } from "../theme";
+import { colors, layout, mapCamera, mapRoute, stageIntro } from "../theme";
 import { SEGMENTS, type Segment } from "../data/segments";
 import {
   applySmoothedCameraTerrainAltitude,
@@ -64,6 +64,8 @@ import {
 type ContinuousStageMapProps = {
   route: StagedRoute;
   timeline: StageTimeline;
+  renderDurationInFrames?: number;
+  startDelayFrames?: number;
 };
 
 type CameraState = {
@@ -109,9 +111,15 @@ const buildContinuousCameraPath = (
   const stageStartFrames = Math.round(getStageIntroHoldSeconds(timeline) * fps);
   const introCardFrames = Math.min(
     stageStartFrames,
-    Math.round(mapCamera.stageVideo.introCardSeconds * fps)
+    Math.round(stageIntro.card.durationSeconds * fps)
   );
-  const flyInFrames = Math.max(1, stageStartFrames - introCardFrames);
+  const flyInFrames = Math.max(
+    1,
+    Math.min(
+      stageStartFrames - introCardFrames,
+      Math.round(stageIntro.flyInSeconds * fps)
+    )
+  );
   const introStartCenter = route.coordinates[0];
   const neutralLeftPadding = mapCamera.padding.right;
   const fullLeftPadding = layout.panelWidth + mapCamera.padding.leftPanelGap;
@@ -563,9 +571,12 @@ const updateMapFrame = (
 export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
   route,
   timeline,
+  renderDurationInFrames,
+  startDelayFrames = 0,
 }) => {
   const frame = useCurrentFrame();
   const { durationInFrames, fps } = useVideoConfig();
+  const cameraDurationInFrames = renderDurationInFrames ?? durationInFrames;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const cameraPathRef = useRef<CameraState[]>([]);
@@ -614,7 +625,7 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
         const cameraPath = buildContinuousCameraPath(
           route,
           timeline,
-          durationInFrames,
+          cameraDurationInFrames,
           fps
         );
         cameraPathRef.current = cameraPath;
@@ -631,7 +642,7 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
           pitch: start.pitch,
           interactive: false,
           preserveDrawingBuffer: true,
-          fadeDuration: 1000,
+          fadeDuration: mapCamera.fadeDurationMs,
           refreshExpiredTiles: false,
           logoPosition: "bottom-right",
           attributionControl: false,
@@ -688,14 +699,16 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
       cameraPathRef.current = [];
       terrainAltitudeStateRef.current = { frame: null, altitudeMeters: null };
     };
-  }, [durationInFrames, fps, route, timeline, waypointClusters]);
+  }, [cameraDurationInFrames, fps, route, timeline, waypointClusters]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!isReady || !map) return;
     const cameraPath = cameraPathRef.current;
+    const cameraFrame = Math.max(0, frame - startDelayFrames);
     const cameraState =
-      cameraPath[Math.min(frame, cameraPath.length - 1)] ?? cameraPath[0];
+      cameraPath[Math.min(cameraFrame, cameraPath.length - 1)] ??
+      cameraPath[0];
     if (!cameraState) return;
 
     let done = false;
@@ -716,7 +729,7 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
       waypointClusters,
       lastActiveSegmentIndexRef,
       markerDistancesRef,
-      frame,
+      cameraFrame,
       fps,
       terrainAltitudeStateRef.current
     );
@@ -732,7 +745,7 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
       map.off("render", complete);
       complete();
     };
-  }, [frame, isReady, route, waypointClusters]);
+  }, [frame, fps, isReady, route, startDelayFrames, waypointClusters]);
 
   if (error) {
     return <MapFallback>{error}</MapFallback>;

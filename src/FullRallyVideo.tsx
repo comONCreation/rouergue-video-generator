@@ -7,6 +7,11 @@ import {
   useVideoConfig,
 } from "remotion";
 import { ContinuousStageMap } from "./components/ContinuousStageMap";
+import {
+  PlaqueBug,
+  PlaqueIntro,
+  PlaqueIntroBackdrop,
+} from "./components/Plaque";
 import { SegmentOverlay } from "./SegmentOverlay";
 import { StageIntroOverlay } from "./components/StageIntroOverlay";
 import { SEGMENTS } from "./data/segments";
@@ -22,7 +27,7 @@ import {
   getStageIntroHoldSeconds,
   type StageTimeline,
 } from "./stageTimeline";
-import { colors, fonts, mapCamera } from "./theme";
+import { colors, fonts, mapCamera, stageIntro } from "./theme";
 
 type Props = { stage: 1 | 2 };
 
@@ -98,6 +103,12 @@ const buildSegmentDisplayEntries = (
 
 export const FullStageVideo: React.FC<Props> = ({ stage }) => {
   const { fps, durationInFrames } = useVideoConfig();
+  const plaqueIntroFrames =
+    stage === 1 ? Math.round(stageIntro.plaque.durationSeconds * fps) : 0;
+  const routeDurationInFrames = Math.max(
+    1,
+    durationInFrames - plaqueIntroFrames
+  );
   const [route, setRoute] = useState<StagedRoute | null>(null);
   const [timeline, setTimeline] = useState<StageTimeline | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -154,11 +165,11 @@ export const FullStageVideo: React.FC<Props> = ({ stage }) => {
             route,
             timeline,
             fps,
-            durationInFrames,
+            routeDurationInFrames,
             introDurationFrames
           )
         : [],
-    [route, timeline, fps, durationInFrames, introDurationFrames]
+    [route, timeline, fps, routeDurationInFrames, introDurationFrames]
   );
 
   if (error) {
@@ -171,25 +182,52 @@ export const FullStageVideo: React.FC<Props> = ({ stage }) => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#07111f" }}>
-      <ContinuousStageMap route={route} timeline={timeline} />
-      {introDurationFrames > 0 && (
-        <Sequence durationInFrames={introCardFrames} layout="none">
-          <StageIntroOverlay
-            stage={stage}
-            durationFrames={introCardFrames}
+      <ContinuousStageMap
+        route={route}
+        timeline={timeline}
+        renderDurationInFrames={routeDurationInFrames}
+        startDelayFrames={plaqueIntroFrames}
+      />
+      {(plaqueIntroFrames > 0 || introCardFrames > 0) && (
+        <Sequence
+          durationInFrames={plaqueIntroFrames + introCardFrames}
+          layout="none"
+        >
+          <PlaqueIntroBackdrop
+            durationFrames={plaqueIntroFrames + introCardFrames}
           />
         </Sequence>
       )}
-      {segmentEntries.map((entry, index) => (
-        <Sequence
-          key={`segment-${index}-${entry.segmentId}`}
-          from={entry.fromFrame}
-          durationInFrames={entry.durationFrames}
-          layout="none"
-        >
-          <SegmentOverlay segmentId={entry.segmentId} />
+      {plaqueIntroFrames > 0 && (
+        <Sequence durationInFrames={plaqueIntroFrames} layout="none">
+          <PlaqueIntro durationFrames={plaqueIntroFrames} />
         </Sequence>
-      ))}
+      )}
+      <Sequence
+        from={plaqueIntroFrames}
+        durationInFrames={routeDurationInFrames}
+        layout="none"
+      >
+        {introDurationFrames > 0 && (
+          <Sequence durationInFrames={introCardFrames} layout="none">
+            <StageIntroOverlay
+              stage={stage}
+              durationFrames={introCardFrames}
+            />
+          </Sequence>
+        )}
+        {segmentEntries.map((entry, index) => (
+          <Sequence
+            key={`segment-${index}-${entry.segmentId}`}
+            from={entry.fromFrame}
+            durationInFrames={entry.durationFrames}
+            layout="none"
+          >
+            <SegmentOverlay segmentId={entry.segmentId} />
+          </Sequence>
+        ))}
+        <PlaqueBug />
+      </Sequence>
     </AbsoluteFill>
   );
 };
