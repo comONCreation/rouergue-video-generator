@@ -8,6 +8,7 @@ import {
   getCumulativeKm,
   getStageTotalKm,
 } from "../data/segments";
+import { AnimatedBlock } from "./AnimatedBlock";
 import { Logo } from "./Logo";
 import { StageIndicator } from "./StageIndicator";
 import { SegmentBlock } from "./SegmentBlock";
@@ -24,30 +25,6 @@ const Divider: React.FC = () => (
     }}
   />
 );
-
-// Anime un bloc avec un slide-up + fade-in décalé
-const AnimatedBlock: React.FC<{
-  delay: number;
-  children: React.ReactNode;
-}> = ({ delay, children }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const progress = spring({
-    frame: frame - delay,
-    fps,
-    config: { damping: 200, stiffness: 120, mass: 0.6 },
-  });
-  return (
-    <div
-      style={{
-        opacity: progress,
-        transform: `translateY(${(1 - progress) * 14}px)`,
-      }}
-    >
-      {children}
-    </div>
-  );
-};
 
 type Props = {
   segment: Segment;
@@ -87,6 +64,7 @@ export const LeftPanel: React.FC<Props> = ({ segment, hide }) => {
         transform: `translateX(${translateX}px)`,
         opacity,
         background: `linear-gradient(180deg, ${colors.panelBgTop}, ${colors.panelBgBottom})`,
+        backdropFilter: "blur(14px)",
         boxShadow: `4px 0 24px ${colors.shadow}`,
         padding: layout.panelPadding,
         display: "flex",

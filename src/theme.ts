@@ -8,8 +8,8 @@ export const colors = {
   white: "#FFFFFF",
   whiteSubtle: "rgba(255, 255, 255, 0.72)",
   whiteFaint: "rgba(255, 255, 255, 0.42)",
-  panelBgTop: "rgba(10, 50, 95, 0.96)",
-  panelBgBottom: "rgba(15, 86, 153, 0.92)",
+  panelBgTop: "rgba(10, 50, 95, 0.86)",
+  panelBgBottom: "rgba(15, 86, 153, 0.82)",
   shadow: "rgba(0, 0, 0, 0.45)",
 };
 
@@ -93,12 +93,23 @@ export const mapCamera = {
     // Durée des pauses caméra à chaque key point intermédiaire ; entre deux
     // key points, la caméra avance en transit à `cameraSpeed`.
     keyPointHolds: {
-      stageStart: 4,
+      stageStart: 6,
       stageFinish: 4,
       esStart: 4,
       esFinish: 4,
       assistance: 3,
       regrouping: 3,
+    },
+    introCardSeconds: 3.2,
+    // Pose caméra au début du fly-in (juste avant que la carte s'aligne sur la
+    // trajectoire). Décalée du bearing/pitch/zoom cibles ; les minima évitent
+    // une pose finale trop plongeante ou trop large sur les courtes étapes.
+    introCamera: {
+      bearingOffsetDegrees: -20,
+      pitchDelta: -18,
+      zoomDelta: -2.6,
+      minPitch: 28,
+      minZoom: 10.8,
     },
   },
   renderTimeouts: {

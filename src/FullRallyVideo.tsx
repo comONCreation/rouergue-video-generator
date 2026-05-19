@@ -8,6 +8,7 @@ import {
 } from "remotion";
 import { ContinuousStageMap } from "./components/ContinuousStageMap";
 import { SegmentOverlay } from "./SegmentOverlay";
+import { StageIntroOverlay } from "./components/StageIntroOverlay";
 import { SEGMENTS } from "./data/segments";
 import {
   findActiveSegmentSpan,
@@ -17,6 +18,8 @@ import {
 import {
   buildStageTimeline,
   getDistanceAtTime,
+  getStageIntroCardSeconds,
+  getStageIntroHoldSeconds,
   type StageTimeline,
 } from "./stageTimeline";
 import { colors, fonts, mapCamera } from "./theme";
@@ -56,11 +59,23 @@ const buildSegmentDisplayEntries = (
   route: StagedRoute,
   timeline: StageTimeline,
   fps: number,
-  durationInFrames: number
+  durationInFrames: number,
+  hiddenUntilFrame: number
 ): SegmentDisplayEntry[] => {
   const entries: SegmentDisplayEntry[] = [];
   let currentSegmentId: string | null = null;
   let currentStart = 0;
+
+  const addEntry = (segmentId: string, fromFrame: number, toFrame: number) => {
+    const clippedFrom = Math.max(fromFrame, hiddenUntilFrame);
+    const clippedTo = Math.max(clippedFrom, toFrame);
+    if (clippedTo <= clippedFrom) return;
+    entries.push({
+      segmentId,
+      fromFrame: clippedFrom,
+      durationFrames: Math.max(1, clippedTo - clippedFrom),
+    });
+  };
 
   for (let frame = 0; frame < durationInFrames; frame++) {
     const time = frame / fps;
@@ -69,22 +84,14 @@ const buildSegmentDisplayEntries = (
     const segmentId = span.segment.id;
     if (segmentId !== currentSegmentId) {
       if (currentSegmentId !== null) {
-        entries.push({
-          segmentId: currentSegmentId,
-          fromFrame: currentStart,
-          durationFrames: Math.max(1, frame - currentStart),
-        });
+        addEntry(currentSegmentId, currentStart, frame);
       }
       currentSegmentId = segmentId;
       currentStart = frame;
     }
   }
   if (currentSegmentId !== null) {
-    entries.push({
-      segmentId: currentSegmentId,
-      fromFrame: currentStart,
-      durationFrames: Math.max(1, durationInFrames - currentStart),
-    });
+    addEntry(currentSegmentId, currentStart, durationInFrames);
   }
   return entries;
 };
@@ -126,12 +133,32 @@ export const FullStageVideo: React.FC<Props> = ({ stage }) => {
     };
   }, [stage]);
 
+  const introDurationFrames = useMemo(
+    () =>
+      timeline ? Math.round(getStageIntroHoldSeconds(timeline) * fps) : 0,
+    [timeline, fps]
+  );
+
+  const introCardFrames = useMemo(
+    () =>
+      timeline
+        ? Math.max(1, Math.round(getStageIntroCardSeconds(timeline) * fps))
+        : 0,
+    [timeline, fps]
+  );
+
   const segmentEntries = useMemo(
     () =>
       route && timeline
-        ? buildSegmentDisplayEntries(route, timeline, fps, durationInFrames)
+        ? buildSegmentDisplayEntries(
+            route,
+            timeline,
+            fps,
+            durationInFrames,
+            introDurationFrames
+          )
         : [],
-    [route, timeline, fps, durationInFrames]
+    [route, timeline, fps, durationInFrames, introDurationFrames]
   );
 
   if (error) {
@@ -145,6 +172,14 @@ export const FullStageVideo: React.FC<Props> = ({ stage }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#07111f" }}>
       <ContinuousStageMap route={route} timeline={timeline} />
+      {introDurationFrames > 0 && (
+        <Sequence durationInFrames={introCardFrames} layout="none">
+          <StageIntroOverlay
+            stage={stage}
+            durationFrames={introCardFrames}
+          />
+        </Sequence>
+      )}
       {segmentEntries.map((entry, index) => (
         <Sequence
           key={`segment-${index}-${entry.segmentId}`}

@@ -299,6 +299,19 @@ export type ActiveContext = {
   transitLocalProgress: number; // 0..1 if in transit, else 0
 };
 
+export const getStageIntroHoldSeconds = (timeline: StageTimeline): number => {
+  const firstPhase = timeline.phases[0];
+  if (!firstPhase || firstPhase.kind !== "hold") return 0;
+  const keyPoint = timeline.keyPoints[firstPhase.keyPointIndex];
+  if (keyPoint?.type !== "stage-start") return 0;
+  return Math.max(0, firstPhase.endTime - firstPhase.startTime);
+};
+
+export const getStageIntroCardSeconds = (timeline: StageTimeline): number => {
+  const holdSeconds = getStageIntroHoldSeconds(timeline);
+  return Math.min(holdSeconds, mapCamera.stageVideo.introCardSeconds);
+};
+
 export const getActiveContext = (
   timeline: StageTimeline,
   time: number

@@ -10,6 +10,8 @@ import {
 export const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
+export const easeOutCubic = (value: number) => 1 - (1 - value) ** 3;
+
 const smoothStepIntegral = (value: number) => value ** 3 - 0.5 * value ** 4;
 
 export const easedTravelProgress = (

@@ -22,6 +22,8 @@ import {
   type WaypointKind,
 } from "../gpx";
 import {
+  clamp,
+  easeOutCubic,
   getSmoothedBearing,
   getSmoothingWindow,
   halfLifeAlpha,
@@ -46,6 +48,7 @@ import {
 } from "../stagedRoute";
 import {
   getDistanceAtTime,
+  getStageIntroHoldSeconds,
   type StageTimeline,
 } from "../stageTimeline";
 import { MapFallback } from "./MapFallback";
@@ -71,6 +74,7 @@ type CameraState = {
   pitch: number;
   zoom: number;
   trackerPoint: LonLat;
+  leftPadding: number;
 };
 
 const pitchForSegment = (segment: Segment) =>
@@ -86,6 +90,7 @@ const buildContinuousCameraPath = (
   fps: number
 ): CameraState[] => {
   const { cinematic } = mapCamera;
+  const introCamera = mapCamera.stageVideo.introCamera;
   const totalDistance = route.totalDistanceMeters;
   const centerLead = getSmoothingWindow(totalDistance, cinematic.centerLead);
   const bearingLead = getSmoothingWindow(totalDistance, cinematic.bearingLead);
@@ -101,6 +106,15 @@ const buildContinuousCameraPath = (
   );
   const pitchAlpha = halfLifeAlpha(cinematic.pitchHalfLifeSeconds, fps);
   const zoomAlpha = halfLifeAlpha(cinematic.zoomHalfLifeSeconds, fps);
+  const stageStartFrames = Math.round(getStageIntroHoldSeconds(timeline) * fps);
+  const introCardFrames = Math.min(
+    stageStartFrames,
+    Math.round(mapCamera.stageVideo.introCardSeconds * fps)
+  );
+  const flyInFrames = Math.max(1, stageStartFrames - introCardFrames);
+  const introStartCenter = route.coordinates[0];
+  const neutralLeftPadding = mapCamera.padding.right;
+  const fullLeftPadding = layout.panelWidth + mapCamera.padding.leftPanelGap;
 
   const routeAsParsed: ParsedGpx = {
     name: "stage",
@@ -167,14 +181,47 @@ const buildContinuousCameraPath = (
       }
     }
 
+    let frameCenter = center;
+    let frameBearing = bearing;
+    let framePitch = pitch;
+    let frameZoom = zoom;
+    let frameLeftPadding = fullLeftPadding;
+
+    if (stageStartFrames > 1 && frame < stageStartFrames) {
+      const flyInFrame = Math.max(0, frame - introCardFrames);
+      const introProgress = easeOutCubic(
+        clamp(flyInFrame / flyInFrames, 0, 1)
+      );
+      const introStartBearing =
+        (targetBearing + introCamera.bearingOffsetDegrees + 360) % 360;
+      const introStartPitch = Math.max(
+        introCamera.minPitch,
+        targetPitch + introCamera.pitchDelta
+      );
+      const introStartZoom = Math.max(
+        introCamera.minZoom,
+        targetZoom + introCamera.zoomDelta
+      );
+
+      frameCenter = lerpLonLat(introStartCenter, center, introProgress);
+      frameBearing = lerpBearing(introStartBearing, bearing, introProgress);
+      framePitch =
+        introStartPitch + (pitch - introStartPitch) * introProgress;
+      frameZoom = introStartZoom + (zoom - introStartZoom) * introProgress;
+      frameLeftPadding =
+        neutralLeftPadding +
+        (fullLeftPadding - neutralLeftPadding) * introProgress;
+    }
+
     states.push({
       distance,
-      center,
-      bearing,
+      center: frameCenter,
+      bearing: frameBearing,
       cameraTerrainAltitudeMeters: terrainAltitude,
-      pitch,
-      zoom,
+      pitch: framePitch,
+      zoom: frameZoom,
       trackerPoint,
+      leftPadding: frameLeftPadding,
     });
   }
 
@@ -459,7 +506,7 @@ const updateMapFrame = (
     padding: {
       top: mapCamera.padding.top,
       bottom: mapCamera.padding.bottom,
-      left: layout.panelWidth + mapCamera.padding.leftPanelGap,
+      left: cameraState.leftPadding,
       right: mapCamera.padding.right,
     },
     retainPadding: false,
