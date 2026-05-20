@@ -3,14 +3,38 @@
 export const colors = {
   blue: "#0F5699",
   blueDark: "#0A3C70",
+  blueMid: "#2e4660",
+  blueShade: "#0f335a",
   orange: "#F59E20",
   orangeDark: "#D8861A",
+  orangeLight: "#FFB347",
   white: "#FFFFFF",
   whiteSubtle: "rgba(255, 255, 255, 0.72)",
   whiteFaint: "rgba(255, 255, 255, 0.42)",
   panelBgTop: "rgba(10, 50, 95, 0.86)",
   panelBgBottom: "rgba(15, 86, 153, 0.82)",
   shadow: "rgba(0, 0, 0, 0.45)",
+  // Fond commun à toutes les vidéos (derrière la carte, derrière les
+  // overlays d'état). À la base d'un grand nombre de rgba(7, 17, 31, …).
+  background: "#07111f",
+};
+
+// Convertit un hex #RRGGBB ou #RGB en rgba(…, alpha).
+export const withAlpha = (color: string, alpha: number): string => {
+  const hex = color.replace("#", "");
+  const full =
+    hex.length === 3
+      ? hex.split("").map((c) => c + c).join("")
+      : hex;
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+export const gradients = {
+  statusBackdrop: `linear-gradient(135deg, ${colors.background} 0%, ${colors.blueShade} 56%, ${colors.blueMid} 100%)`,
+  orangeBarHorizontal: `linear-gradient(90deg, ${colors.orange}, ${colors.orangeLight})`,
 };
 
 export const fonts = {
@@ -83,6 +107,16 @@ export const stageIntro = {
     background:
       "radial-gradient(circle at 50% 46%, rgba(7, 17, 31, 0.30) 0%, rgba(7, 17, 31, 0.56) 56%, rgba(7, 17, 31, 0.74) 100%)",
   },
+};
+
+export const mediaCallout = {
+  cardWidth: 600,
+  cardHeight: 400,
+  titleBarHeight: 86,
+  cardGap: 58,
+  cardOffsetY: 50,
+  screenMargin: 0,
+  leftSafeGap: 36,
 };
 
 export const mapCamera = {

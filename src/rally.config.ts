@@ -15,6 +15,9 @@ export const RALLY = {
     "Vendredi 10 juillet 2026",
     "Samedi 11 juillet 2026",
   ],
+  // Numéro de l'étape (1-based) qui ouvre la vidéo avec la plaque d'intro
+  // plein écran. `null` désactive complètement la plaque d'intro.
+  introPlaqueStage: 1 as number | null,
   // Style Mapbox par défaut. Surchargeable via REMOTION_MAPBOX_STYLE
   // dans le fichier .env.
   mapboxStyleFallback:
@@ -22,6 +25,15 @@ export const RALLY = {
 } as const;
 
 export const STAGE_COUNT = RALLY.stageDates.length;
+
+// Liste 1-based des étapes : [1, 2, …, STAGE_COUNT].
+export const STAGE_NUMBERS = Array.from(
+  { length: STAGE_COUNT },
+  (_, i) => i + 1
+);
+
+export const getStageDate = (stage: number): string =>
+  RALLY.stageDates[stage - 1] ?? "";
 
 export const resolveMapboxStyle = () =>
   process.env.REMOTION_MAPBOX_STYLE ?? RALLY.mapboxStyleFallback;

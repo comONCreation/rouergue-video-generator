@@ -1,5 +1,5 @@
 import React from "react";
-import { colors, layout } from "../theme";
+import { colors, gradients, layout } from "../theme";
 import type { Segment } from "../data/segments";
 import {
   RALLY_TOTAL_KM,
@@ -138,7 +138,7 @@ export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
             position: "absolute",
             inset: 0,
             width: `${stageRatio * 100}%`,
-            background: `linear-gradient(90deg, ${colors.orange}, #FFB347)`,
+            background: gradients.orangeBarHorizontal,
           }}
         />
       </div>

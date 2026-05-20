@@ -10,10 +10,8 @@
 // (totaux légèrement décalés du Road Book par exemple) passent par
 // console.warn pour ne pas bloquer le développement.
 
-import type { Segment } from "./segments";
+import type { Section, Segment } from "./segments";
 import { GPX_BY_SEGMENT_ID } from "./gpxFiles";
-
-type Section = { number: number; stage: 1 | 2; name: string };
 
 const fatal = (message: string): never => {
   throw new Error(`[segments] ${message}`);

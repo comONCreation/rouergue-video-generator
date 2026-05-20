@@ -27,15 +27,15 @@ import {
   getStageIntroMotionSeconds,
   type StageTimeline,
 } from "./stageTimeline";
-import { colors, fonts, mapCamera, stageIntro } from "./theme";
+import { colors, fonts, gradients, mapCamera, stageIntro } from "./theme";
+import { RALLY } from "./rally.config";
 
-type Props = { stage: 1 | 2 };
+type Props = { stage: number };
 
 const StageStatus: React.FC<{ message: string }> = ({ message }) => (
   <AbsoluteFill
     style={{
-      background:
-        "linear-gradient(135deg, #07111f 0%, #0f335a 56%, #2e4660 100%)",
+      background: gradients.statusBackdrop,
       color: colors.white,
       fontFamily: fonts.display,
       fontSize: 36,
@@ -103,8 +103,10 @@ const buildSegmentDisplayEntries = (
 
 export const FullStageVideo: React.FC<Props> = ({ stage }) => {
   const { fps, durationInFrames } = useVideoConfig();
-  const plaqueIntroFrames =
-    stage === 1 ? Math.round(stageIntro.plaque.durationSeconds * fps) : 0;
+  const showsIntroPlaque = RALLY.introPlaqueStage === stage;
+  const plaqueIntroFrames = showsIntroPlaque
+    ? Math.round(stageIntro.plaque.durationSeconds * fps)
+    : 0;
   const routeDurationInFrames = Math.max(
     1,
     durationInFrames - plaqueIntroFrames
@@ -181,7 +183,7 @@ export const FullStageVideo: React.FC<Props> = ({ stage }) => {
   }
 
   return (
-    <AbsoluteFill style={{ backgroundColor: "#07111f" }}>
+    <AbsoluteFill style={{ backgroundColor: colors.background }}>
       <ContinuousStageMap
         route={route}
         timeline={timeline}

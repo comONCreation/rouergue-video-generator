@@ -1,6 +1,7 @@
 import React from "react";
 import { colors } from "../theme";
 import { TOTAL_SECTIONS } from "../data/segments";
+import { STAGE_COUNT } from "../rally.config";
 import {
   bodyStyle,
   bodySmallStyle,
@@ -11,7 +12,7 @@ import {
 } from "../typography";
 
 type Props = {
-  stage: 1 | 2;
+  stage: number;
   date: string;
   section: number;
   sectionName: string;
@@ -35,7 +36,7 @@ export const StageIndicator: React.FC<Props> = ({
             color: colors.whiteFaint,
           }}
         >
-          / 2
+          / {STAGE_COUNT}
         </span>
       </div>
 

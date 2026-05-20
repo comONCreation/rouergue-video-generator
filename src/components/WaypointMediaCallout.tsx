@@ -6,7 +6,8 @@ import {
   interpolate,
   staticFile,
 } from "remotion";
-import { colors, fonts, layout } from "../theme";
+import { clamp, easeInOutCubic } from "../cameraPath";
+import { colors, fonts, layout, mediaCallout, withAlpha } from "../theme";
 import type { WaypointMediaCue } from "../data/waypointMedia";
 
 type Point = {
@@ -21,21 +22,18 @@ type WaypointMediaCalloutProps = {
   mediaStartFrame?: number;
 };
 
-const CARD_WIDTH = 600;
-const CARD_HEIGHT = 400;
-const TITLE_BAR_HEIGHT = 86;
+const {
+  cardWidth: CARD_WIDTH,
+  cardHeight: CARD_HEIGHT,
+  titleBarHeight: TITLE_BAR_HEIGHT,
+  cardGap: CARD_GAP,
+  cardOffsetY: CARD_OFFSET_Y,
+  screenMargin: SCREEN_MARGIN,
+} = mediaCallout;
 const MEDIA_HEIGHT = CARD_HEIGHT - TITLE_BAR_HEIGHT;
-const CARD_GAP = 58;
-const CARD_OFFSET_Y = 50;
-const SCREEN_MARGIN = 0;
-const LEFT_SAFE_MARGIN = layout.panelWidth + 36;
-
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(max, Math.max(min, value));
+const LEFT_SAFE_MARGIN = layout.panelWidth + mediaCallout.leftSafeGap;
 
 const easeOutCubic = (value: number) => 1 - Math.pow(1 - value, 3);
-const easeInOutCubic = (value: number) =>
-  value < 0.5 ? 4 * value * value * value : 1 - Math.pow(-2 * value + 2, 3) / 2;
 
 const resolveCardPosition = (point: Point) => {
   const rightCandidate = point.x + CARD_GAP;
@@ -237,7 +235,7 @@ export const WaypointMediaCallout: React.FC<WaypointMediaCalloutProps> = ({
           top: card.top,
           width: CARD_WIDTH,
           height: CARD_HEIGHT,
-          background: "rgba(7, 17, 31, 0.88)",
+          background: withAlpha(colors.background, 0.88),
           border: "1px solid rgba(255, 255, 255, 0.26)",
           boxShadow: "0 28px 70px rgba(0, 0, 0, 0.48)",
           overflow: "hidden",

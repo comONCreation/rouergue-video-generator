@@ -9,6 +9,13 @@ import {
 } from "remotion";
 import { colors, stageIntro } from "../theme";
 
+const PlaqueImage: React.FC = () => (
+  <Img
+    src={staticFile("plaque.png")}
+    style={{ width: "100%", height: "auto", display: "block" }}
+  />
+);
+
 export const PlaqueBug: React.FC<{
   opacity?: number;
 }> = ({ opacity = 1 }) => (
@@ -24,14 +31,7 @@ export const PlaqueBug: React.FC<{
       zIndex: 10,
     }}
   >
-    <Img
-      src={staticFile("plaque.png")}
-      style={{
-        width: "100%",
-        height: "auto",
-        display: "block",
-      }}
-    />
+    <PlaqueImage />
   </div>
 );
 
@@ -77,14 +77,7 @@ export const PlaqueIntro: React.FC<{
           filter: `drop-shadow(${stageIntro.plaque.introShadow} ${colors.shadow})`,
         }}
       >
-        <Img
-          src={staticFile("plaque.png")}
-          style={{
-            width: "100%",
-            height: "auto",
-            display: "block",
-          }}
-        />
+        <PlaqueImage />
       </div>
     </AbsoluteFill>
   );

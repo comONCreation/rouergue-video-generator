@@ -16,7 +16,7 @@ import {
 import { AnimatedBlock } from "./AnimatedBlock";
 
 type Props = {
-  stage: 1 | 2;
+  stage: number;
   durationFrames: number;
 };
 

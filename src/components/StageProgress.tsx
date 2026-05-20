@@ -1,5 +1,5 @@
 import React from "react";
-import { colors } from "../theme";
+import { colors, gradients } from "../theme";
 import { formatKm } from "../format";
 import { bodySmallStyle, labelStyle, valueMediumStyle } from "../typography";
 
@@ -34,7 +34,7 @@ export const StageProgress: React.FC<Props> = ({
             position: "absolute",
             inset: 0,
             width: `${ratio * 100}%`,
-            background: `linear-gradient(90deg, ${colors.orange}, #FFB347)`,
+            background: gradients.orangeBarHorizontal,
             borderRadius: 5,
             boxShadow: `0 0 14px ${colors.orange}`,
           }}

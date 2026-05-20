@@ -1,11 +1,7 @@
 // Données extraites du Road Book de l'édition courante.
 // Identité du rallye (édition, dates, nom) : src/rally.config.ts.
-import { RALLY } from "../rally.config";
+import { getStageDate } from "../rally.config";
 import { validateSegments } from "./validateSegments";
-
-export const RALLY_NAME = RALLY.fullName;
-export const STAGE_1_DATE = RALLY.stageDates[0];
-export const STAGE_2_DATE = RALLY.stageDates[1];
 
 export type SegmentType = "LIAISON" | "ES";
 
@@ -25,25 +21,26 @@ export type Segment = {
   startTime: string;
   /** Heure d'arrivée prévue de la 1ère voiture au CH suivant (HH:MM) */
   endTime?: string;
-  /** Section du rallye (1..6) */
+  /** Section du rallye (1..N) */
   section: number;
-  stage: 1 | 2;
+  /** Numéro d'étape 1-based. */
+  stage: number;
   date: string;
   /** Indication ajoutée dans le panneau (ex. "Refueling", "Super-spéciale") */
   badge?: string;
 };
 
-const s1 = (s: Omit<Segment, "stage" | "date">): Segment => ({
-  ...s,
-  stage: 1,
-  date: STAGE_1_DATE,
-});
+// Builder de segment : injecte `stage` + `date` dérivée de l'édition.
+const forStage =
+  (stage: number) =>
+  (s: Omit<Segment, "stage" | "date">): Segment => ({
+    ...s,
+    stage,
+    date: getStageDate(stage),
+  });
 
-const s2 = (s: Omit<Segment, "stage" | "date">): Segment => ({
-  ...s,
-  stage: 2,
-  date: STAGE_2_DATE,
-});
+const s1 = forStage(1);
+const s2 = forStage(2);
 
 export const SEGMENTS: Segment[] = [
   // ───── ÉTAPE 1 — Section 1 ─────
@@ -530,24 +527,23 @@ export const getCumulativeKm = (segmentId: string) =>
 const sumKm = (predicate: (s: Segment) => boolean) =>
   SEGMENTS.filter(predicate).reduce((acc, s) => acc + s.distanceKm, 0);
 
-export const STAGE_1_TOTAL_KM = sumKm((s) => s.stage === 1);
-export const STAGE_2_TOTAL_KM = sumKm((s) => s.stage === 2);
-export const RALLY_TOTAL_KM = STAGE_1_TOTAL_KM + STAGE_2_TOTAL_KM;
-export const RALLY_TOTAL_ES_KM = sumKm((s) => s.type === "ES");
+export const RALLY_TOTAL_KM = sumKm(() => true);
 
-export const getStageTotalKm = (stage: 1 | 2) =>
+export const getStageTotalKm = (stage: number) =>
   sumKm((s) => s.stage === stage);
 
 export const getSegmentById = (id: string) =>
   SEGMENTS.find((s) => s.id === id);
 
-export const SECTIONS = [
-  { number: 1, stage: 1 as const, name: "Boucle Espalion (matin 1)" },
-  { number: 2, stage: 1 as const, name: "Boucle Espalion (matin 2)" },
-  { number: 3, stage: 1 as const, name: "Boucles Espalion (après-midi)" },
-  { number: 4, stage: 2 as const, name: "Boucle La Primaube (matin)" },
-  { number: 5, stage: 2 as const, name: "Boucle La Primaube (après-midi)" },
-  { number: 6, stage: 2 as const, name: "Super-spéciale Rodez" },
+export type Section = { number: number; stage: number; name: string };
+
+export const SECTIONS: Section[] = [
+  { number: 1, stage: 1, name: "Boucle Espalion (matin 1)" },
+  { number: 2, stage: 1, name: "Boucle Espalion (matin 2)" },
+  { number: 3, stage: 1, name: "Boucles Espalion (après-midi)" },
+  { number: 4, stage: 2, name: "Boucle La Primaube (matin)" },
+  { number: 5, stage: 2, name: "Boucle La Primaube (après-midi)" },
+  { number: 6, stage: 2, name: "Super-spéciale Rodez" },
 ];
 
 export const TOTAL_SECTIONS = SECTIONS.length;

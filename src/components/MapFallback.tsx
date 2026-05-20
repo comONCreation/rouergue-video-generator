@@ -1,14 +1,13 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { colors, fonts } from "../theme";
+import { colors, fonts, gradients } from "../theme";
 
 export const MapFallback: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => (
   <AbsoluteFill
     style={{
-      background:
-        "linear-gradient(135deg, #07111f 0%, #0f335a 56%, #2e4660 100%)",
+      background: gradients.statusBackdrop,
       color: colors.white,
       fontFamily: fonts.display,
       fontSize: 40,

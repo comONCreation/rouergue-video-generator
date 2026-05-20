@@ -1,10 +1,13 @@
 import { type Segment } from "./segments";
 
-const STAGE_1_GPX_DIR = "GPX/E\u0301tape 1";
-const STAGE_2_GPX_DIR = "GPX/E\u0301tape 2";
+// Les fichiers GPX sont rang\u00e9s par \u00e9tape dans `public/GPX/\u00c9tape <n>/`.
+// Le `\u0301` (combining accent aigu) correspond \u00e0 la d\u00e9composition NFD
+// utilis\u00e9e par macOS pour l'arborescence livr\u00e9e par l'organisation.
+const gpxPathFor = (stage: number, file: string) =>
+  `GPX/E\u0301tape ${stage}/${file}`;
 
-const s1 = (file: string) => `${STAGE_1_GPX_DIR}/${file}`;
-const s2 = (file: string) => `${STAGE_2_GPX_DIR}/${file}`;
+const s1 = (file: string) => gpxPathFor(1, file);
+const s2 = (file: string) => gpxPathFor(2, file);
 
 export const GPX_BY_SEGMENT_ID: Record<string, string> = {
   "S1-L01": s1("R26 1.01 Li RODEZ LAISSAC.gpx"),
