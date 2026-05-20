@@ -42,25 +42,37 @@ const resolveCardPosition = (point: Point) => {
   const leftCandidate = point.x - CARD_WIDTH - CARD_GAP;
   const canFitRight = rightCandidate + CARD_WIDTH <= layout.width - SCREEN_MARGIN;
   const canFitLeft = leftCandidate >= LEFT_SAFE_MARGIN;
+  const centeredLeft = clamp(
+    point.x - CARD_WIDTH / 2,
+    LEFT_SAFE_MARGIN,
+    layout.width - CARD_WIDTH - SCREEN_MARGIN
+  );
+  const centeredTop = clamp(
+    point.y - CARD_HEIGHT / 2 + CARD_OFFSET_Y,
+    SCREEN_MARGIN,
+    layout.height - CARD_HEIGHT - SCREEN_MARGIN
+  );
+  const bottomCandidate = point.y + CARD_GAP;
+  const topCandidate = point.y - CARD_HEIGHT - CARD_GAP;
+  const canFitBottom =
+    bottomCandidate + CARD_HEIGHT <= layout.height - SCREEN_MARGIN;
+  const canFitTop = topCandidate >= SCREEN_MARGIN;
 
-  const left = canFitRight
-    ? rightCandidate
-    : canFitLeft
-      ? leftCandidate
-      : clamp(
-          point.x - CARD_WIDTH / 2,
-          LEFT_SAFE_MARGIN,
-          layout.width - CARD_WIDTH - SCREEN_MARGIN
-        );
+  if (canFitRight || canFitLeft) {
+    return {
+      left: canFitRight ? rightCandidate : leftCandidate,
+      top: centeredTop,
+    };
+  }
 
-  return {
-    left,
-    top: clamp(
-      point.y - CARD_HEIGHT / 2 + CARD_OFFSET_Y,
-      SCREEN_MARGIN,
-      layout.height - CARD_HEIGHT - SCREEN_MARGIN
-    ),
-  };
+  if (canFitBottom || canFitTop) {
+    return {
+      left: centeredLeft,
+      top: canFitBottom ? bottomCandidate : topCandidate,
+    };
+  }
+
+  return { left: centeredLeft, top: centeredTop };
 };
 
 const PlaceholderMedia: React.FC<{ cue: WaypointMediaCue }> = ({ cue }) => {

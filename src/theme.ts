@@ -29,7 +29,7 @@ export const layout = {
   compactPadding: 20,
   compactMargin: 32,
   // Timing (secondes)
-  minimizeAtSeconds: 6,
+  minimizeAtSeconds: 9,
   minimizeDurationSeconds: 0.6,
 };
 
