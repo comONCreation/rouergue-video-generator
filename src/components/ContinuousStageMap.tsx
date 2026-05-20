@@ -47,11 +47,14 @@ import {
   type StagedSegmentSpan,
 } from "../stagedRoute";
 import {
+  getActiveContext,
   getDistanceAtTime,
   getStageIntroHoldSeconds,
   type StageTimeline,
 } from "../stageTimeline";
+import { buildFirstWaypointMediaEntries } from "../data/waypointMedia";
 import { MapFallback } from "./MapFallback";
+import { WaypointMediaCallout } from "./WaypointMediaCallout";
 import {
   SOURCE_IDS,
   addRouteAndWaypointLayers,
@@ -84,6 +87,15 @@ const pitchForSegment = (segment: Segment) =>
 
 const zoomForSegment = (segment: Segment) =>
   segment.type === "ES" ? mapCamera.zoom.es : mapCamera.zoom.liaison;
+
+const asParsedRoute = (route: StagedRoute): ParsedGpx => ({
+  name: "stage",
+  coordinates: route.coordinates,
+  cumulativeDistances: route.cumulativeDistances,
+  totalDistanceMeters: route.totalDistanceMeters,
+  elevations: route.elevations,
+  waypoints: [],
+});
 
 const buildContinuousCameraPath = (
   route: StagedRoute,
@@ -124,14 +136,7 @@ const buildContinuousCameraPath = (
   const neutralLeftPadding = mapCamera.padding.right;
   const fullLeftPadding = layout.panelWidth + mapCamera.padding.leftPanelGap;
 
-  const routeAsParsed: ParsedGpx = {
-    name: "stage",
-    coordinates: route.coordinates,
-    cumulativeDistances: route.cumulativeDistances,
-    totalDistanceMeters: route.totalDistanceMeters,
-    elevations: route.elevations,
-    waypoints: [],
-  };
+  const routeAsParsed = asParsedRoute(route);
 
   const states: CameraState[] = [];
   let center = pointAtDistance(routeAsParsed, centerLead).point;
@@ -590,6 +595,16 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const waypointClusters = useMemo(() => buildWaypointClusters(route), [route]);
+  const mediaCueByKeyPointIndex = useMemo(
+    () =>
+      new Map(
+        buildFirstWaypointMediaEntries(timeline.keyPoints).map((entry) => [
+          entry.index,
+          entry.cue,
+        ])
+      ),
+    [timeline]
+  );
 
   useEffect(() => {
     const token = process.env.REMOTION_MAPBOX_TOKEN;
@@ -751,6 +766,54 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
     return <MapFallback>{error}</MapFallback>;
   }
 
+  const cameraFrame = Math.max(0, frame - startDelayFrames);
+  const activeContext = getActiveContext(timeline, cameraFrame / fps);
+  const activeMediaCue =
+    activeContext?.phase.kind === "hold"
+      ? mediaCueByKeyPointIndex.get(activeContext.phase.keyPointIndex) ?? null
+      : null;
+  const mediaDelaySeconds =
+    activeContext?.phase.kind === "hold" &&
+    activeContext.currentKeyPoint?.type === "stage-start" &&
+    activeMediaCue
+      ? Math.max(
+          0,
+          activeContext.phase.endTime -
+            activeContext.phase.startTime -
+            activeMediaCue.holdSeconds
+        )
+      : 0;
+  const mediaStartSeconds =
+    activeContext?.phase.kind === "hold"
+      ? activeContext.phase.startTime + mediaDelaySeconds
+      : 0;
+  const mediaEndSeconds =
+    activeContext?.phase.kind === "hold" ? activeContext.phase.endTime : 0;
+  const mediaProgress =
+    activeContext?.phase.kind === "hold" && activeMediaCue
+      ? Math.max(
+          0,
+          Math.min(
+            1,
+            (cameraFrame / fps - mediaStartSeconds) /
+              Math.max(1e-6, mediaEndSeconds - mediaStartSeconds)
+          )
+        )
+      : 0;
+  const activeMediaPoint =
+    activeMediaCue &&
+    mediaProgress > 0 &&
+    activeContext?.currentKeyPoint &&
+    mapRef.current
+      ? mapRef.current.project(
+          activeContext.currentKeyPoint.rawWaypoint?.coordinates ??
+            pointAtDistance(
+              asParsedRoute(route),
+              activeContext.currentKeyPoint.distance
+            ).point
+        )
+      : null;
+
   return (
     <AbsoluteFill style={{ backgroundColor: "#07111f" }}>
       <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
@@ -761,6 +824,16 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
             "linear-gradient(90deg, rgba(5, 14, 28, 0.44) 0%, rgba(5, 14, 28, 0.22) 27%, rgba(5, 14, 28, 0) 62%)",
         }}
       />
+      {activeMediaCue && activeMediaPoint && activeContext && (
+        <WaypointMediaCallout
+          cue={activeMediaCue}
+          point={{ x: activeMediaPoint.x, y: activeMediaPoint.y }}
+          progress={mediaProgress}
+          mediaStartFrame={
+            startDelayFrames + Math.round(mediaStartSeconds * fps)
+          }
+        />
+      )}
     </AbsoluteFill>
   );
 };

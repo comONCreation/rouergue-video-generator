@@ -7,6 +7,7 @@ import { easedTravelProgress } from "./cameraPath";
 import type { Segment } from "./data/segments";
 import { mapCamera, mapRoute, stageIntro } from "./theme";
 import type { StagedRoute, StagedSegmentSpan } from "./stagedRoute";
+import { buildFirstWaypointMediaEntries } from "./data/waypointMedia";
 
 export type KeyPointType =
   | "stage-start"
@@ -56,22 +57,11 @@ const TYPE_PRIORITY: Record<KeyPointType, number> = {
   regrouping: 3,
 };
 
-const HOLD_KEY_BY_TYPE: Record<
-  Exclude<KeyPointType, "stage-start">,
-  keyof typeof mapCamera.stageVideo.keyPointHolds
-> = {
-  "stage-finish": "stageFinish",
-  "es-start": "esStart",
-  "es-finish": "esFinish",
-  assistance: "assistance",
-  regrouping: "regrouping",
-};
-
 const holdSecondsForType = (type: KeyPointType): number => {
   if (type === "stage-start") {
     return stageIntro.card.durationSeconds + stageIntro.flyInSeconds;
   }
-  return mapCamera.stageVideo.keyPointHolds[HOLD_KEY_BY_TYPE[type]];
+  return mapCamera.stageVideo.keyPointHoldSeconds.default;
 };
 
 const findDistanceForCoordinateInSpan = (
@@ -111,7 +101,7 @@ const buildLabel = (
 ): { label: string; subtitle?: string } => {
   if (type === "stage-start") {
     return {
-      label: segment.fromLocation ?? "Départ",
+      label: waypoint?.name ?? segment.fromLocation ?? "Départ",
       subtitle: `Étape ${segment.stage}`,
     };
   }
@@ -162,14 +152,22 @@ export const buildStageTimeline = (route: StagedRoute): StageTimeline => {
 
   const firstSpan = route.segments[0];
   const lastSpan = route.segments[route.segments.length - 1];
+  const firstWaypoint = route.segmentRoutes[0]?.route.waypoints.find(
+    (waypoint) => waypoint.kind !== "public-zone"
+  );
 
-  const startLabel = buildLabel("stage-start", undefined, firstSpan.segment);
+  const startLabel = buildLabel(
+    "stage-start",
+    firstWaypoint,
+    firstSpan.segment
+  );
   collected.push({
     type: "stage-start",
     distance: 0,
     segment: firstSpan.segment,
     label: startLabel.label,
     subtitle: startLabel.subtitle,
+    rawWaypoint: firstWaypoint,
     holdSeconds: holdSecondsForType("stage-start"),
   });
 
@@ -230,6 +228,17 @@ export const buildStageTimeline = (route: StagedRoute): StageTimeline => {
       continue;
     }
     keyPoints.push(kp);
+  }
+
+  for (const { index, cue } of buildFirstWaypointMediaEntries(keyPoints)) {
+    const keyPoint = keyPoints[index];
+    keyPoints[index] = {
+      ...keyPoint,
+      holdSeconds:
+        keyPoint.type === "stage-start"
+          ? keyPoint.holdSeconds + cue.holdSeconds
+          : Math.max(keyPoint.holdSeconds, cue.holdSeconds),
+    };
   }
 
   const phases: Phase[] = [];
@@ -314,6 +323,12 @@ export const getStageIntroCardSeconds = (timeline: StageTimeline): number => {
   const holdSeconds = getStageIntroHoldSeconds(timeline);
   return Math.min(holdSeconds, stageIntro.card.durationSeconds);
 };
+
+export const getStageIntroMotionSeconds = (timeline: StageTimeline): number =>
+  Math.min(
+    getStageIntroHoldSeconds(timeline),
+    stageIntro.card.durationSeconds + stageIntro.flyInSeconds
+  );
 
 export const getActiveContext = (
   timeline: StageTimeline,

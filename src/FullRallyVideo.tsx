@@ -24,7 +24,7 @@ import {
   buildStageTimeline,
   getDistanceAtTime,
   getStageIntroCardSeconds,
-  getStageIntroHoldSeconds,
+  getStageIntroMotionSeconds,
   type StageTimeline,
 } from "./stageTimeline";
 import { colors, fonts, mapCamera, stageIntro } from "./theme";
@@ -144,9 +144,9 @@ export const FullStageVideo: React.FC<Props> = ({ stage }) => {
     };
   }, [stage]);
 
-  const introDurationFrames = useMemo(
+  const introMotionFrames = useMemo(
     () =>
-      timeline ? Math.round(getStageIntroHoldSeconds(timeline) * fps) : 0,
+      timeline ? Math.round(getStageIntroMotionSeconds(timeline) * fps) : 0,
     [timeline, fps]
   );
 
@@ -166,10 +166,10 @@ export const FullStageVideo: React.FC<Props> = ({ stage }) => {
             timeline,
             fps,
             routeDurationInFrames,
-            introDurationFrames
+            introMotionFrames
           )
         : [],
-    [route, timeline, fps, routeDurationInFrames, introDurationFrames]
+    [route, timeline, fps, routeDurationInFrames, introMotionFrames]
   );
 
   if (error) {
@@ -208,7 +208,7 @@ export const FullStageVideo: React.FC<Props> = ({ stage }) => {
         durationInFrames={routeDurationInFrames}
         layout="none"
       >
-        {introDurationFrames > 0 && (
+        {introMotionFrames > 0 && (
           <Sequence durationInFrames={introCardFrames} layout="none">
             <StageIntroOverlay
               stage={stage}

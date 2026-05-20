@@ -38,7 +38,9 @@ import {
   type SmoothedCameraTerrainAltitudeState,
 } from "../mapboxRenderConfig";
 import { resolveMapboxStyle } from "../rally.config";
+import type { WaypointMediaCue } from "../data/waypointMedia";
 import { MapFallback } from "./MapFallback";
+import { WaypointMediaCallout } from "./WaypointMediaCallout";
 import {
   SOURCE_IDS,
   addRouteAndWaypointLayers,
@@ -50,6 +52,7 @@ import {
 type RallyMapProps = {
   segment: Segment;
   gpxPath: string;
+  arrivalMediaCue?: WaypointMediaCue | null;
 };
 
 type CameraState = {
@@ -351,7 +354,11 @@ const updateMapFrame = (
   setPublicZoneRevealProgress(map, cameraState.distance, cutoff);
 };
 
-export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
+export const RallyMap: React.FC<RallyMapProps> = ({
+  segment,
+  gpxPath,
+  arrivalMediaCue = null,
+}) => {
   const frame = useCurrentFrame();
   const { durationInFrames, fps } = useVideoConfig();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -527,6 +534,27 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
     return <MapFallback>{error}</MapFallback>;
   }
 
+  const outroHoldFrames = Math.min(
+    Math.round(mapCamera.segmentVideo.introOutroHoldSeconds * fps),
+    Math.floor(Math.max(0, durationInFrames - 1) / 2)
+  );
+  const mediaProgress =
+    arrivalMediaCue && outroHoldFrames > 0
+      ? Math.max(
+          0,
+          Math.min(
+            1,
+            (frame - (durationInFrames - outroHoldFrames)) / outroHoldFrames
+          )
+        )
+      : 0;
+  const arrivalPoint =
+    arrivalMediaCue && mediaProgress > 0 && mapRef.current && routeRef.current
+      ? mapRef.current.project(
+          routeRef.current.coordinates[routeRef.current.coordinates.length - 1]
+        )
+      : null;
+
   return (
     <AbsoluteFill style={{ backgroundColor: "#07111f" }}>
       <div
@@ -543,6 +571,14 @@ export const RallyMap: React.FC<RallyMapProps> = ({ segment, gpxPath }) => {
             "linear-gradient(90deg, rgba(5, 14, 28, 0.44) 0%, rgba(5, 14, 28, 0.22) 27%, rgba(5, 14, 28, 0) 62%)",
         }}
       />
+      {arrivalMediaCue && arrivalPoint && (
+        <WaypointMediaCallout
+          cue={arrivalMediaCue}
+          point={{ x: arrivalPoint.x, y: arrivalPoint.y }}
+          progress={mediaProgress}
+          mediaStartFrame={durationInFrames - outroHoldFrames}
+        />
+      )}
     </AbsoluteFill>
   );
 };

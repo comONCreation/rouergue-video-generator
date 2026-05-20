@@ -3,6 +3,7 @@ import { AbsoluteFill } from "remotion";
 import { RallyMap } from "./components/RallyMap";
 import { getGpxPathForSegment } from "./data/gpxFiles";
 import { getSegmentById } from "./data/segments";
+import { getWaypointMediaCue } from "./data/waypointMedia";
 import { SegmentOverlay } from "./SegmentOverlay";
 import { PlaqueBug } from "./components/Plaque";
 
@@ -52,11 +53,22 @@ export const SegmentMapVideo: React.FC<SegmentMapVideoProps> = ({
   }
 
   const gpxPath = getGpxPathForSegment(segment);
+  const arrivalMediaCue = segment.toLocation
+    ? getWaypointMediaCue({
+        label: segment.toLocation,
+        segment,
+        type: "segment-arrival",
+      })
+    : null;
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#07111f" }}>
       {gpxPath ? (
-        <RallyMap segment={segment} gpxPath={gpxPath} />
+        <RallyMap
+          segment={segment}
+          gpxPath={gpxPath}
+          arrivalMediaCue={arrivalMediaCue}
+        />
       ) : (
         <MissingGpx segmentId={segment.id} />
       )}

@@ -143,14 +143,11 @@ export const mapCamera = {
   travelEaseSeconds: 2,
   // Vidéo continue d'étape complète (FULL-S1, FULL-S2).
   stageVideo: {
-    // Durée des pauses caméra à chaque key point intermédiaire ; entre deux
-    // key points, la caméra avance en transit à `cameraSpeed`.
-    keyPointHolds: {
-      stageFinish: 4,
-      esStart: 4,
-      esFinish: 4,
-      assistance: 3,
-      regrouping: 3,
+    // Durée des pauses caméra à chaque key point. Les points avec média
+    // gardent la caméra plus longtemps pour laisser le callout respirer.
+    keyPointHoldSeconds: {
+      default: 4,
+      media: 6,
     },
     // Pose caméra au début du fly-in (juste avant que la carte s'aligne sur la
     // trajectoire). Décalée du bearing/pitch/zoom cibles ; les minima évitent
