@@ -2,9 +2,8 @@ import mapboxgl from "mapbox-gl";
 import { staticFile } from "remotion";
 import { mapPins, mapRoute } from "../theme";
 
-// IDs partagés entre RallyMap (vidéos par segment) et ContinuousStageMap
-// (vidéo continue d'étape). À garder synchronisés avec les references
-// `setGeoJsonData(map, ID, …)` côté composants.
+// IDs des sources utilisées par ContinuousStageMap. À garder synchronisés
+// avec les références `setGeoJsonData(map, ID, …)`.
 export const SOURCE_IDS = {
   routeFull: "route-full",
   routeProgress: "route-progress",
@@ -134,14 +133,12 @@ const buildLineWidthExpression = (offset: number) => {
   ];
 };
 
-// `lineColor` accepte une couleur fixe (vidéos par segment, où la teinte
-// dépend du type ES/Liaison du segment) ou une expression Mapbox `match`
-// (vidéo continue, où la teinte vient d'une propriété par feature).
-export type LineColor = string | mapboxgl.ExpressionSpecification;
-
 export const addRouteAndWaypointLayers = (
   map: mapboxgl.Map,
-  options: { lineColor: LineColor; trackerCoreColor: string }
+  options: {
+    lineColor: mapboxgl.ExpressionSpecification;
+    trackerCoreColor: string;
+  }
 ) => {
   const widthExpression = buildLineWidthExpression(0);
 

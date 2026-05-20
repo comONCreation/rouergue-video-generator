@@ -1,9 +1,4 @@
-import type {
-  Feature,
-  FeatureCollection,
-  LineString,
-  Point,
-} from "geojson";
+import type { FeatureCollection, Point } from "geojson";
 
 export type LonLat = [number, number];
 
@@ -294,52 +289,6 @@ export const routeDistanceAtPoint = (
 
   return bestDistance;
 };
-
-export const routeCoordinatesUntilDistance = (
-  route: ParsedGpx,
-  distance: number
-) => {
-  const target = Math.max(0, Math.min(route.totalDistanceMeters, distance));
-  const { coordinates, cumulativeDistances } = route;
-
-  if (target <= 0) {
-    return [coordinates[0], coordinates[1]];
-  }
-
-  const visibleCoordinates: LonLat[] = [coordinates[0]];
-
-  for (let i = 1; i < coordinates.length; i++) {
-    if (cumulativeDistances[i] <= target) {
-      visibleCoordinates.push(coordinates[i]);
-      continue;
-    }
-
-    const segmentStartDistance = cumulativeDistances[i - 1];
-    const segmentDistance = cumulativeDistances[i] - segmentStartDistance;
-    const localProgress =
-      segmentDistance === 0 ? 0 : (target - segmentStartDistance) / segmentDistance;
-
-    visibleCoordinates.push(
-      interpolateLonLat(coordinates[i - 1], coordinates[i], localProgress)
-    );
-    break;
-  }
-
-  return visibleCoordinates.length >= 2
-    ? visibleCoordinates
-    : [coordinates[0], coordinates[1]];
-};
-
-export const routeFeature = (
-  coordinates: LonLat[]
-): Feature<LineString, Record<string, never>> => ({
-  type: "Feature",
-  properties: {},
-  geometry: {
-    type: "LineString",
-    coordinates,
-  },
-});
 
 export const waypointCollection = (
   waypoints: DisplayWaypoint[]

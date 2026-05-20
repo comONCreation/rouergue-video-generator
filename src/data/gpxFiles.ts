@@ -1,4 +1,4 @@
-import { SEGMENTS, type Segment } from "./segments";
+import { type Segment } from "./segments";
 
 const STAGE_1_GPX_DIR = "GPX/E\u0301tape 1";
 const STAGE_2_GPX_DIR = "GPX/E\u0301tape 2";
@@ -59,6 +59,3 @@ export const getGpxPathForSegment = (segment: Segment | string) => {
   const id = typeof segment === "string" ? segment : segment.id;
   return GPX_BY_SEGMENT_ID[id] ?? null;
 };
-
-export const getSegmentsWithoutGpx = () =>
-  SEGMENTS.filter((segment) => !getGpxPathForSegment(segment));

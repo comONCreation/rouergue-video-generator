@@ -127,12 +127,6 @@ export const mapCamera = {
     // terrain sans modifier l'exagération du relief dans le style Mapbox.
     terrainAltitudeHalfLifeSeconds: 2,
   },
-  // Vidéos par segment unitaire (S1-ES1, S1-L02, …).
-  segmentVideo: {
-    // Caméra immobile pendant cette durée au tout début (intro) ET à la fin
-    // (outro) de chaque vidéo de segment, pour laisser l'overlay s'animer.
-    introOutroHoldSeconds: 3,
-  },
   cameraSpeed: {
     es: 2000,
     liaison: 5000,

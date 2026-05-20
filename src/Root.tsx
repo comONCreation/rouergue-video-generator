@@ -1,11 +1,7 @@
 import React from "react";
 import { Composition } from "remotion";
-import { SegmentMapVideo } from "./SegmentMapVideo";
 import { FullStageVideo } from "./FullRallyVideo";
-import {
-  SEGMENTS,
-  computeSegmentDurationSeconds,
-} from "./data/segments";
+import { SEGMENTS } from "./data/segments";
 import { loadStagedRoute } from "./stagedRoute";
 import { buildStageTimeline } from "./stageTimeline";
 import { layout, stageIntro } from "./theme";
@@ -35,23 +31,6 @@ const calculateFullStageMetadata = async ({
 export const Root: React.FC = () => {
   return (
     <>
-      {SEGMENTS.map((segment) => {
-        const durationInFrames = Math.round(
-          computeSegmentDurationSeconds(segment) * layout.fps
-        );
-        return (
-          <Composition
-            key={segment.id}
-            id={segment.id}
-            component={SegmentMapVideo}
-            width={layout.width}
-            height={layout.height}
-            fps={layout.fps}
-            durationInFrames={durationInFrames}
-            defaultProps={{ segmentId: segment.id }}
-          />
-        );
-      })}
       <Composition
         id="FULL-S1"
         component={FullStageVideo}

@@ -1,6 +1,5 @@
 // Données extraites du Road Book de l'édition courante.
 // Identité du rallye (édition, dates, nom) : src/rally.config.ts.
-import { mapCamera } from "../theme";
 import { RALLY } from "../rally.config";
 import { validateSegments } from "./validateSegments";
 
@@ -541,17 +540,6 @@ export const getStageTotalKm = (stage: 1 | 2) =>
 
 export const getSegmentById = (id: string) =>
   SEGMENTS.find((s) => s.id === id);
-
-export const computeSegmentDurationSeconds = (segment: Segment): number => {
-  const speedKmh =
-    segment.type === "ES"
-      ? mapCamera.cameraSpeed.es
-      : mapCamera.cameraSpeed.liaison;
-  const distanceKm = Math.max(0, segment.distanceKm);
-  const speedBasedSeconds = speedKmh > 0 ? (distanceKm / speedKmh) * 3600 : 0;
-  const activeSeconds = speedBasedSeconds + mapCamera.travelEaseSeconds;
-  return mapCamera.segmentVideo.introOutroHoldSeconds * 2 + activeSeconds;
-};
 
 export const SECTIONS = [
   { number: 1, stage: 1 as const, name: "Boucle Espalion (matin 1)" },
