@@ -3,7 +3,7 @@
   <wpt lat="44.40981" lon="2.88458">
     <name>Arrivée ES 4-8 Vimenet</name>
   </wpt>
-  <wpt lat="44.38441" lon="2.8217">
+  <wpt lat="44.38444" lon="2.82168">
     <name>Assistance Laissac</name>
   </wpt>
   <trk>
@@ -182,7 +182,7 @@
       <trkpt lat="44.38328" lon="2.82192"/>
       <trkpt lat="44.38331" lon="2.82189"/>
       <trkpt lat="44.38407" lon="2.82177"/>
-      <trkpt lat="44.38441" lon="2.8217"/>
+      <trkpt lat="44.38444" lon="2.82168"/>
     </trkseg>
   </trk>
 </gpx>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="">
-  <wpt lat="44.38512" lon="2.82153">
+  <wpt lat="44.38444" lon="2.82168">
     <name>Assistance Laissac</name>
   </wpt>
   <wpt lat="44.57074" lon="2.58749">
@@ -10,6 +10,7 @@
     <name>R26 1.02 Li LAISSAC CAMPUAC</name>
     <desc>Parcours de Liaison</desc>
     <trkseg>
+      <trkpt lat="44.38444" lon="2.82168"/>
       <trkpt lat="44.38512" lon="2.82153"/>
       <trkpt lat="44.38523" lon="2.8215"/>
       <trkpt lat="44.38567" lon="2.82136"/>

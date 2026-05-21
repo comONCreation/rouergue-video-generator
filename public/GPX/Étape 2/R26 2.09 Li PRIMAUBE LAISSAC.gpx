@@ -3,7 +3,7 @@
   <wpt lat="44.29361" lon="2.5607">
     <name>Regroupement La Primaube</name>
   </wpt>
-  <wpt lat="44.38447" lon="2.82167">
+  <wpt lat="44.38444" lon="2.82168">
     <name>Assistance Laissac</name>
   </wpt>
   <trk>
@@ -585,7 +585,7 @@
       <trkpt lat="44.38244" lon="2.82188"/>
       <trkpt lat="44.3833" lon="2.82191"/>
       <trkpt lat="44.38339" lon="2.82187"/>
-      <trkpt lat="44.38447" lon="2.82167"/>
+      <trkpt lat="44.38444" lon="2.82168"/>
     </trkseg>
   </trk>
 </gpx>
