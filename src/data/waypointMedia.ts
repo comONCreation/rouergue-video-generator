@@ -45,17 +45,11 @@ const WAYPOINT_MEDIA_HOLD_SECONDS =
   mapCamera.stageVideo.keyPointHoldSeconds.media;
 
 export const WAYPOINT_MEDIA_CUES: WaypointMediaCue[] = [
-  {
-    id: "podium-parc-ferme-bourran",
-    title: "Podium parc fermé Bourran",
-    matchLabels: ["Podium parc ferme Bourran", "Podium Bourran"],
-    holdSeconds: WAYPOINT_MEDIA_HOLD_SECONDS,
-    accentColor: colors.blue,
-  },
-  {
+    {
     id: "parc-ferme-bourran",
     title: "Parc fermé Bourran",
     matchLabels: ["Parc ferme Bourran"],
+    media: { type: "video", src: "videos/bourran.mp4", startFromSeconds: 16 },
     holdSeconds: WAYPOINT_MEDIA_HOLD_SECONDS,
     accentColor: colors.blue,
   },
@@ -71,6 +65,7 @@ export const WAYPOINT_MEDIA_CUES: WaypointMediaCue[] = [
     id: "regroupement-espalion",
     title: "Regroupement Espalion",
     matchLabels: ["Regroupement Espalion"],
+    media: { type: "video", src: "videos/espalion.mp4", startFromSeconds: 120 },
     holdSeconds: WAYPOINT_MEDIA_HOLD_SECONDS,
     accentColor: colors.blue,
   },
@@ -78,6 +73,14 @@ export const WAYPOINT_MEDIA_CUES: WaypointMediaCue[] = [
     id: "regroupement-la-primaube",
     title: "Regroupement La Primaube",
     matchLabels: ["Regroupement La Primaube"],
+    media: { type: "video", src: "videos/la-primaube.mp4", startFromSeconds: 47 },
+    holdSeconds: WAYPOINT_MEDIA_HOLD_SECONDS,
+    accentColor: colors.blue,
+  },
+  {
+    id: "podium-parc-ferme-bourran",
+    title: "Podium parc fermé Bourran",
+    matchLabels: ["Podium Bourran"],
     holdSeconds: WAYPOINT_MEDIA_HOLD_SECONDS,
     accentColor: colors.blue,
   },
