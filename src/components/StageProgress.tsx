@@ -1,7 +1,7 @@
 import React from "react";
 import { colors, gradients } from "../theme";
-import { formatKm } from "../format";
-import { bodySmallStyle, labelStyle, valueMediumStyle } from "../typography";
+import { formatKm } from "../theme/format";
+import { bodySmallStyle, labelStyle, valueMediumStyle } from "../theme/typography";
 
 type Props = {
   cumulativeKm: number;

@@ -5,7 +5,7 @@ import {
   pointAtDistance,
   type LonLat,
   type ParsedGpx,
-} from "./gpx";
+} from "../route/gpx";
 
 export const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));

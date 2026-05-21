@@ -4,10 +4,10 @@ import {
   type DisplayWaypoint,
   type GpxWaypoint,
   type WaypointKind,
-} from "../gpx";
+} from "../route/gpx";
 import { SEGMENTS, type Segment } from "../data/segments";
 import { mapRoute } from "../theme";
-import type { StagedRoute } from "../stagedRoute";
+import type { StagedRoute } from "../route/stagedRoute";
 
 const formatEsWaypointLabel = (
   rawName: string,

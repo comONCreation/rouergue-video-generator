@@ -6,9 +6,9 @@ import {
   type LonLat,
   type ParsedGpx,
 } from "./gpx";
-import type { Segment } from "./data/segments";
-import { getGpxPathForSegment } from "./data/gpxFiles";
-import { mapRoute } from "./theme";
+import type { Segment } from "../data/segments";
+import { getGpxPathForSegment } from "../data/gpxFiles";
+import { mapRoute } from "../theme";
 
 export type StagedSegmentSpan = {
   segment: Segment;

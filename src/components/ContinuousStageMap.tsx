@@ -8,31 +8,31 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { pointAtDistance } from "../gpx";
+import { pointAtDistance } from "../route/gpx";
 import { colors, mapCamera, withAlpha } from "../theme";
-import type { SmoothedCameraTerrainAltitudeState } from "../mapboxRenderConfig";
+import type { SmoothedCameraTerrainAltitudeState } from "../map/mapboxRenderConfig";
 import { resolveMapboxStyle } from "../rally.config";
-import type { StagedRoute } from "../stagedRoute";
+import type { StagedRoute } from "../route/stagedRoute";
 import {
   getActiveContext,
   type StageTimeline,
-} from "../stageTimeline";
+} from "../route/stageTimeline";
 import { buildFirstWaypointMediaEntries } from "../data/waypointMedia";
 import { MapFallback } from "./MapFallback";
 import { WaypointMediaCallout } from "./WaypointMediaCallout";
-import { loadAllPinImages } from "./mapLayers";
+import { loadAllPinImages } from "../map/mapLayers";
 import {
   asParsedRoute,
   buildContinuousCameraPath,
   type CameraState,
-} from "./continuousCameraPath";
+} from "../map/continuousCameraPath";
 import {
   buildWaypointClusters,
-} from "./continuousWaypoints";
+} from "../map/continuousWaypoints";
 import {
   addRouteLayers,
   updateMapFrame,
-} from "./continuousMapFrame";
+} from "../map/continuousMapFrame";
 
 type ContinuousStageMapProps = {
   route: StagedRoute;

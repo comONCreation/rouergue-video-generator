@@ -9,7 +9,7 @@ import {
   formatStageTitle,
   isShakedownStage,
 } from "../rally.config";
-import { formatKm } from "../format";
+import { formatKm } from "../theme/format";
 import { colors, fonts, stageIntro } from "../theme";
 import {
   bodyStyle,
@@ -17,7 +17,7 @@ import {
   labelStyle,
   unitStyle,
   valueStyle,
-} from "../typography";
+} from "../theme/typography";
 import { AnimatedBlock } from "./AnimatedBlock";
 
 type Props = {

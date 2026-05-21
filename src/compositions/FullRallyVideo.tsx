@@ -6,29 +6,29 @@ import {
   Sequence,
   useVideoConfig,
 } from "remotion";
-import { ContinuousStageMap } from "./components/ContinuousStageMap";
+import { ContinuousStageMap } from "../components/ContinuousStageMap";
 import {
   PlaqueBug,
   PlaqueIntro,
   PlaqueIntroBackdrop,
-} from "./components/Plaque";
+} from "../components/Plaque";
 import { SegmentOverlay } from "./SegmentOverlay";
-import { StageIntroOverlay } from "./components/StageIntroOverlay";
-import { SEGMENTS } from "./data/segments";
+import { StageIntroOverlay } from "../components/StageIntroOverlay";
+import { SEGMENTS } from "../data/segments";
 import {
   findActiveSegmentSpan,
   loadStagedRoute,
   type StagedRoute,
-} from "./stagedRoute";
+} from "../route/stagedRoute";
 import {
   buildStageTimeline,
   getDistanceAtTime,
   getStageIntroCardSeconds,
   getStageIntroMotionSeconds,
   type StageTimeline,
-} from "./stageTimeline";
-import { colors, fonts, gradients, mapCamera, stageIntro } from "./theme";
-import { RALLY } from "./rally.config";
+} from "../route/stageTimeline";
+import { colors, fonts, gradients, mapCamera, stageIntro } from "../theme";
+import { RALLY } from "../rally.config";
 
 type Props = { stage: number };
 

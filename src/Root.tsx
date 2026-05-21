@@ -1,9 +1,9 @@
 import React from "react";
 import { Composition } from "remotion";
-import { FullStageVideo } from "./FullRallyVideo";
+import { FullStageVideo } from "./compositions/FullRallyVideo";
 import { SEGMENTS } from "./data/segments";
-import { loadStagedRoute } from "./stagedRoute";
-import { buildStageTimeline } from "./stageTimeline";
+import { loadStagedRoute } from "./route/stagedRoute";
+import { buildStageTimeline } from "./route/stageTimeline";
 import { RALLY, STAGE_NUMBERS } from "./rally.config";
 import { layout, stageIntro } from "./theme";
 

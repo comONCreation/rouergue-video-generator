@@ -5,7 +5,7 @@
 // une nouvelle entrée ici plutôt que de patcher inline.
 
 import type { CSSProperties } from "react";
-import { colors, fonts } from "./theme";
+import { colors, fonts } from ".";
 
 const baseFont = fonts.display;
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { colors, fonts } from "../theme";
 import type { Segment } from "../data/segments";
-import { formatKm } from "../format";
+import { formatKm } from "../theme/format";
 import { isShakedownStage } from "../rally.config";
 import {
   bodySmallStyle,
@@ -10,7 +10,7 @@ import {
   unitStyle,
   valueAccentStyle,
   valueStyle,
-} from "../typography";
+} from "../theme/typography";
 
 export const SegmentBlock: React.FC<{ segment: Segment }> = ({ segment }) => {
   const isES = segment.type === "ES";

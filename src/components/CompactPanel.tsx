@@ -7,14 +7,14 @@ import {
   getStageTotalKm,
 } from "../data/segments";
 import { isShakedownStage } from "../rally.config";
-import { formatKm } from "../format";
+import { formatKm } from "../theme/format";
 import {
   labelStyle,
   titleStyle,
   unitStyle,
   valueAccentStyle,
   valueStyle,
-} from "../typography";
+} from "../theme/typography";
 
 type Props = {
   segment: Segment;

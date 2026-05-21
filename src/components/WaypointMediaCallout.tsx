@@ -6,7 +6,7 @@ import {
   interpolate,
   staticFile,
 } from "remotion";
-import { clamp, easeInOutCubic } from "../cameraPath";
+import { clamp, easeInOutCubic } from "../map/cameraPath";
 import { colors, fonts, layout, mediaCallout, withAlpha } from "../theme";
 import type { WaypointMediaCue } from "../data/waypointMedia";
 

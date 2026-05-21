@@ -3,7 +3,7 @@ import {
   pointAtDistance,
   type LonLat,
   type ParsedGpx,
-} from "../gpx";
+} from "../route/gpx";
 import {
   clamp,
   easeInOutCubic,
@@ -12,15 +12,15 @@ import {
   halfLifeAlpha,
   lerpBearing,
   lerpLonLat,
-} from "../cameraPath";
+} from "./cameraPath";
 import { layout, mapCamera, stageIntro } from "../theme";
 import type { Segment } from "../data/segments";
-import { findActiveSegmentSpan, type StagedRoute } from "../stagedRoute";
+import { findActiveSegmentSpan, type StagedRoute } from "../route/stagedRoute";
 import {
   getDistanceAtTime,
   getStageIntroHoldSeconds,
   type StageTimeline,
-} from "../stageTimeline";
+} from "../route/stageTimeline";
 
 export type CameraState = {
   distance: number;

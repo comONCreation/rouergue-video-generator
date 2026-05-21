@@ -2,15 +2,15 @@ import type mapboxgl from "mapbox-gl";
 import {
   waypointCollection,
   type DisplayWaypoint,
-} from "../gpx";
-import { pointFeature } from "../cameraPath";
+} from "../route/gpx";
+import { pointFeature } from "./cameraPath";
 import { mapCamera } from "../theme";
 import {
   applySmoothedCameraTerrainAltitude,
   resolveSmoothedCameraTerrainAltitude,
   type SmoothedCameraTerrainAltitudeState,
-} from "../mapboxRenderConfig";
-import { findActiveSegmentIndex, type StagedRoute } from "../stagedRoute";
+} from "./mapboxRenderConfig";
+import { findActiveSegmentIndex, type StagedRoute } from "../route/stagedRoute";
 import {
   SOURCE_IDS,
   addRouteAndWaypointLayers,

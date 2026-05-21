@@ -14,8 +14,8 @@ import { Logo } from "./Logo";
 import { StageIndicator } from "./StageIndicator";
 import { SegmentBlock } from "./SegmentBlock";
 import { StageProgress } from "./StageProgress";
-import { formatKm } from "../format";
-import { labelStyle, valueMediumStyle } from "../typography";
+import { formatKm } from "../theme/format";
+import { labelStyle, valueMediumStyle } from "../theme/typography";
 
 const Divider: React.FC = () => (
   <div

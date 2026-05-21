@@ -9,7 +9,7 @@ import {
   labelLargeStyle,
   valueHeroStyle,
   valueMediumStyle,
-} from "../typography";
+} from "../theme/typography";
 
 type Props = {
   stage: number;

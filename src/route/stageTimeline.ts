@@ -3,12 +3,12 @@ import {
   type GpxWaypoint,
   type LonLat,
 } from "./gpx";
-import { easedTravelProgress } from "./cameraPath";
-import type { Segment } from "./data/segments";
-import { mapCamera, mapRoute, stageIntro } from "./theme";
+import { easedTravelProgress } from "../map/cameraPath";
+import type { Segment } from "../data/segments";
+import { mapCamera, mapRoute, stageIntro } from "../theme";
 import type { StagedRoute, StagedSegmentSpan } from "./stagedRoute";
-import { buildFirstWaypointMediaEntries } from "./data/waypointMedia";
-import { formatStageTitle } from "./rally.config";
+import { buildFirstWaypointMediaEntries } from "../data/waypointMedia";
+import { formatStageTitle } from "../rally.config";
 
 export type KeyPointType =
   | "stage-start"

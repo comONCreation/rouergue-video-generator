@@ -1,9 +1,9 @@
 import React from "react";
 import { AbsoluteFill, continueRender, delayRender } from "remotion";
 import { loadFont } from "@remotion/google-fonts/Montserrat";
-import { LeftPanel, useHideProgress } from "./components/LeftPanel";
-import { CompactPanel } from "./components/CompactPanel";
-import { getSegmentById } from "./data/segments";
+import { LeftPanel, useHideProgress } from "../components/LeftPanel";
+import { CompactPanel } from "../components/CompactPanel";
+import { getSegmentById } from "../data/segments";
 
 const { waitUntilDone } = loadFont("normal", {
   weights: ["500", "600", "700", "800"],

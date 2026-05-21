@@ -1,13 +1,13 @@
 import type { Feature, FeatureCollection, LineString } from "geojson";
 import type mapboxgl from "mapbox-gl";
-import type { LonLat } from "../gpx";
+import type { LonLat } from "../route/gpx";
 import { colors, mapRoute } from "../theme";
 import type { Segment } from "../data/segments";
 import {
   spanCoordinatesUntilDistance,
   type StagedRoute,
   type StagedSegmentSpan,
-} from "../stagedRoute";
+} from "../route/stagedRoute";
 
 const buildSegmentLineFeature = (
   span: StagedSegmentSpan,
