@@ -33,6 +33,8 @@ const {
 } = mediaCallout;
 const MEDIA_HEIGHT = CARD_HEIGHT - TITLE_BAR_HEIGHT;
 const LEFT_SAFE_MARGIN = layout.panelWidth + mediaCallout.leftSafeGap;
+const ENTER_END_PROGRESS = 0.22;
+const EXIT_START_PROGRESS = 0.86;
 
 const easeOutCubic = (value: number) => 1 - Math.pow(1 - value, 3);
 
@@ -171,11 +173,11 @@ export const WaypointMediaCallout: React.FC<WaypointMediaCalloutProps> = ({
   progress,
   mediaStartFrame = 0,
 }) => {
-  const enter = interpolate(progress, [0, 0.22], [0, 1], {
+  const enter = interpolate(progress, [0, ENTER_END_PROGRESS], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const exit = interpolate(progress, [0.92, 1], [1, 0], {
+  const exit = interpolate(progress, [EXIT_START_PROGRESS, 1], [1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
