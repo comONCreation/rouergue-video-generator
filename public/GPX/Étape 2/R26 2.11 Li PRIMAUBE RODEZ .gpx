@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="">
-  <wpt lat="44.29362" lon="2.56079">
+  <wpt lat="44.29334" lon="2.56135">
     <name>Regroupement La Primaube</name>
   </wpt>
   <wpt lat="44.35406" lon="2.55982">
@@ -10,6 +10,7 @@
     <name>R25 2.11 Li PRIMAUBE RODEZ </name>
     <desc>Parcours de Liaison</desc>
     <trkseg>
+      <trkpt lat="44.29334" lon="2.56135"/>
       <trkpt lat="44.29362" lon="2.56079"/>
       <trkpt lat="44.29363" lon="2.56073"/>
       <trkpt lat="44.29362" lon="2.56068"/>

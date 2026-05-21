@@ -3,7 +3,7 @@
   <wpt lat="44.37033" lon="2.44567">
     <name>Arrivée ES 11-14 Luc-la-Primaube-Moyrazès</name>
   </wpt>
-  <wpt lat="44.29338" lon="2.56136">
+  <wpt lat="44.29334" lon="2.56135">
     <name>Regroupement La Primaube</name>
   </wpt>
   <trk>
@@ -650,7 +650,7 @@
       <trkpt lat="44.29302" lon="2.56125"/>
       <trkpt lat="44.29305" lon="2.56128"/>
       <trkpt lat="44.29326" lon="2.56133"/>
-      <trkpt lat="44.29338" lon="2.56136"/>
+      <trkpt lat="44.29334" lon="2.56135"/>
     </trkseg>
   </trk>
 </gpx>

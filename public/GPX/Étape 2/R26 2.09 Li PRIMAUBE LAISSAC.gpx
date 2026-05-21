@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="">
-  <wpt lat="44.29361" lon="2.5607">
+  <wpt lat="44.29334" lon="2.56135">
     <name>Regroupement La Primaube</name>
   </wpt>
   <wpt lat="44.38444" lon="2.82168">
@@ -10,6 +10,7 @@
     <name>R26 2.09 Li PRIMAUBE LAISSAC</name>
     <desc>Parcours de Liaison</desc>
     <trkseg>
+      <trkpt lat="44.29334" lon="2.56135"/>
       <trkpt lat="44.29361" lon="2.5607"/>
       <trkpt lat="44.29359" lon="2.56063"/>
       <trkpt lat="44.29315" lon="2.5605"/>
