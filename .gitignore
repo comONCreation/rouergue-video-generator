@@ -4,6 +4,9 @@ node_modules/
 # Sortie de rendu Remotion
 out/
 
+# Médias locaux lourds
+public/videos/
+
 # Cache Remotion / build
 .cache/
 .remotion/
