@@ -8,6 +8,7 @@ import type { Segment } from "./data/segments";
 import { mapCamera, mapRoute, stageIntro } from "./theme";
 import type { StagedRoute, StagedSegmentSpan } from "./stagedRoute";
 import { buildFirstWaypointMediaEntries } from "./data/waypointMedia";
+import { formatStageTitle } from "./rally.config";
 
 export type KeyPointType =
   | "stage-start"
@@ -102,13 +103,13 @@ const buildLabel = (
   if (type === "stage-start") {
     return {
       label: waypoint?.name ?? segment.fromLocation ?? "Départ",
-      subtitle: `Étape ${segment.stage}`,
+      subtitle: formatStageTitle(segment.stage),
     };
   }
   if (type === "stage-finish") {
     return {
       label: segment.toLocation ?? "Arrivée",
-      subtitle: `Étape ${segment.stage}`,
+      subtitle: formatStageTitle(segment.stage),
     };
   }
   if (!waypoint) {
@@ -218,10 +219,9 @@ export const buildStageTimeline = (route: StagedRoute): StageTimeline => {
         mapRoute.thresholds.coincidentKeyPointsMeters
     ) {
       // À distance ~égale, le doublon vient typiquement des waypoints
-      // partagés à la jonction de deux GPX consécutifs (fin du segment N
-      // = début du segment N+1). On garde la version associée au segment
-      // "entrant" pour que l'overlay décrive ce qu'on rejoint, pas ce qu'on
-      // quitte. À priorité strictement supérieure, on remplace toujours.
+      // partagés à la jonction de deux GPX consécutifs. À priorité égale,
+      // on garde le point côté segment à parcourir afin que l'overlay et la
+      // caméra annoncent directement ce qui démarre.
       if (TYPE_PRIORITY[kp.type] >= TYPE_PRIORITY[prev.type]) {
         keyPoints[keyPoints.length - 1] = kp;
       }

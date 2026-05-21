@@ -1,6 +1,6 @@
 // Données extraites du Road Book de l'édition courante.
 // Identité du rallye (édition, dates, nom) : src/rally.config.ts.
-import { getStageDate } from "../rally.config";
+import { SHAKEDOWN_TIME_WINDOW, getStageDate } from "../rally.config";
 import { validateSegments } from "./validateSegments";
 
 export type SegmentType = "LIAISON" | "ES";
@@ -19,6 +19,8 @@ export type Segment = {
   distanceKm: number;
   /** Heure de départ de la 1ère voiture (HH:MM) */
   startTime: string;
+  /** Créneau libre à afficher quand il n'y a pas d'horaire précis. */
+  timeWindow?: string;
   /** Heure d'arrivée prévue de la 1ère voiture au CH suivant (HH:MM) */
   endTime?: string;
   /** Section du rallye (1..N) */
@@ -39,10 +41,47 @@ const forStage =
     date: getStageDate(stage),
   });
 
+const s0 = forStage(0);
 const s1 = forStage(1);
 const s2 = forStage(2);
 
 export const SEGMENTS: Segment[] = [
+  // ───── SHAKEDOWN (jeudi) ─────
+  s0({
+    id: "S0-L01",
+    type: "LIAISON",
+    liaisonNumber: 1,
+    title: "Liaison",
+    fromLocation: "Assistance Laissac",
+    toLocation: "Départ Shakedown",
+    distanceKm: 1.902,
+    startTime: "10:00",
+    timeWindow: SHAKEDOWN_TIME_WINDOW,
+    section: 0,
+  }),
+  s0({
+    id: "S0-ES1",
+    type: "ES",
+    title: "Shakedown",
+    distanceKm: 4.963,
+    startTime: "10:00",
+    timeWindow: SHAKEDOWN_TIME_WINDOW,
+    section: 0,
+    badge: "Shakedown",
+  }),
+  s0({
+    id: "S0-L02",
+    type: "LIAISON",
+    liaisonNumber: 2,
+    title: "Liaison retour",
+    fromLocation: "Arrivée Shakedown",
+    toLocation: "Assistance Laissac",
+    distanceKm: 11.844,
+    startTime: "10:15",
+    timeWindow: SHAKEDOWN_TIME_WINDOW,
+    section: 0,
+  }),
+
   // ───── ÉTAPE 1 — Section 1 ─────
   s1({
     id: "S1-L01",
@@ -527,7 +566,9 @@ export const getCumulativeKm = (segmentId: string) =>
 const sumKm = (predicate: (s: Segment) => boolean) =>
   SEGMENTS.filter(predicate).reduce((acc, s) => acc + s.distanceKm, 0);
 
-export const RALLY_TOTAL_KM = sumKm(() => true);
+// Le shakedown (stage 0) n'entre pas dans le total kilométrique du rallye :
+// c'est de la reconnaissance, pas un parcours chronométré du week-end.
+export const RALLY_TOTAL_KM = sumKm((s) => s.stage > 0);
 
 export const getStageTotalKm = (stage: number) =>
   sumKm((s) => s.stage === stage);
@@ -538,6 +579,7 @@ export const getSegmentById = (id: string) =>
 export type Section = { number: number; stage: number; name: string };
 
 export const SECTIONS: Section[] = [
+  { number: 0, stage: 0, name: "Shakedown" },
   { number: 1, stage: 1, name: "Boucle Espalion (matin 1)" },
   { number: 2, stage: 1, name: "Boucle Espalion (matin 2)" },
   { number: 3, stage: 1, name: "Boucles Espalion (après-midi)" },
@@ -546,7 +588,11 @@ export const SECTIONS: Section[] = [
   { number: 6, stage: 2, name: "Super-spéciale Rodez" },
 ];
 
-export const TOTAL_SECTIONS = SECTIONS.length;
+// Le shakedown n'est pas compté dans la barre de progression des sections,
+// qui ne s'applique qu'aux étapes officielles du rallye.
+export const TOTAL_SECTIONS = SECTIONS.filter(
+  (section) => section.stage > 0
+).length;
 
 // Validation au chargement : déclenche tôt en cas de désynchro
 // (sections orphelines, GPX manquants, distances invalides, …).

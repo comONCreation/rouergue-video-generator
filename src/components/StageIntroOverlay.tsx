@@ -4,6 +4,11 @@ import {
   SEGMENTS,
   getStageTotalKm,
 } from "../data/segments";
+import {
+  SHAKEDOWN_TIME_WINDOW,
+  formatStageTitle,
+  isShakedownStage,
+} from "../rally.config";
 import { formatKm } from "../format";
 import { colors, fonts, stageIntro } from "../theme";
 import {
@@ -59,6 +64,7 @@ export const StageIntroOverlay: React.FC<Props> = ({
   const esCount = stageSegments.filter((segment) => segment.type === "ES").length;
   const firstSegment = stageSegments[0];
   const stageTotalKm = getStageTotalKm(stage);
+  const isShakedown = isShakedownStage(stage);
 
   const exitStart = Math.max(
     0,
@@ -117,7 +123,9 @@ export const StageIntroOverlay: React.FC<Props> = ({
               delay={stageIntro.card.delays.label}
               offsetY={stageIntro.card.animationOffsetY}
             >
-              <div style={labelStyle}>Début d'étape</div>
+              <div style={labelStyle}>
+                {isShakedown ? "Essais libres" : "Début d'étape"}
+              </div>
             </AnimatedBlock>
 
             <AnimatedBlock
@@ -134,7 +142,7 @@ export const StageIntroOverlay: React.FC<Props> = ({
                   color: colors.white,
                 }}
               >
-                Étape {stage}
+                {formatStageTitle(stage)}
               </div>
             </AnimatedBlock>
 
@@ -167,7 +175,10 @@ export const StageIntroOverlay: React.FC<Props> = ({
                   "linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.22), rgba(255,255,255,0.06))",
               }}
             >
-              <StageStat label="Spéciales" value={`${esCount} ES`} />
+              <StageStat
+                label={isShakedown ? "Créneau" : "Spéciales"}
+                value={isShakedown ? SHAKEDOWN_TIME_WINDOW : `${esCount} ES`}
+              />
               <StageStat
                 label="Kilomètres"
                 value={formatKm(stageTotalKm)}

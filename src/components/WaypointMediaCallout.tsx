@@ -56,6 +56,13 @@ const resolveCardPosition = (point: Point) => {
     bottomCandidate + CARD_HEIGHT <= layout.height - SCREEN_MARGIN;
   const canFitTop = topCandidate >= SCREEN_MARGIN;
 
+  if (canFitBottom) {
+    return {
+      left: centeredLeft,
+      top: bottomCandidate,
+    };
+  }
+
   if (canFitRight || canFitLeft) {
     return {
       left: canFitRight ? rightCandidate : leftCandidate,
@@ -63,10 +70,10 @@ const resolveCardPosition = (point: Point) => {
     };
   }
 
-  if (canFitBottom || canFitTop) {
+  if (canFitTop) {
     return {
       left: centeredLeft,
-      top: canFitBottom ? bottomCandidate : topCandidate,
+      top: topCandidate,
     };
   }
 

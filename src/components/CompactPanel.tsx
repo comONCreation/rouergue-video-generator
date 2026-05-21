@@ -6,6 +6,7 @@ import {
   getCumulativeKm,
   getStageTotalKm,
 } from "../data/segments";
+import { isShakedownStage } from "../rally.config";
 import { formatKm } from "../format";
 import {
   labelStyle,
@@ -23,9 +24,11 @@ type Props = {
 
 export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
   const isES = segment.type === "ES";
+  const isShakedown = isShakedownStage(segment.stage);
   const cumulativeKm = getCumulativeKm(segment.id);
   const stageTotal = getStageTotalKm(segment.stage);
   const stageRatio = Math.min(1, cumulativeKm / stageTotal);
+  const timeValue = segment.timeWindow ?? segment.startTime;
 
   return (
     <div
@@ -55,9 +58,12 @@ export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
         {/* Badge type vertical (carré) */}
         <div
           style={{
-            background: isES ? colors.orange : "rgba(255,255,255,0.14)",
+            background:
+              isES && !isShakedown
+                ? colors.orange
+                : "rgba(255,255,255,0.14)",
             color: colors.white,
-            width: 96,
+            width: isShakedown ? 132 : 96,
             height: 96,
             borderRadius: 6,
             display: "flex",
@@ -75,9 +81,9 @@ export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
               opacity: 0.85,
             }}
           >
-            {isES ? "ES" : "Liaison"}
+            {isShakedown ? "Shakedown" : isES ? "ES" : "Liaison"}
           </span>
-          {isES && (
+          {isES && !isShakedown && (
             <span style={{ ...valueStyle, marginTop: 2 }}>
               {segment.esNumber}
             </span>
@@ -96,7 +102,9 @@ export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
           }}
         >
           <span style={labelStyle}>
-            Étape {segment.stage} · Section {segment.section}
+            {isShakedown
+              ? "Essais libres"
+              : `Étape ${segment.stage} · Section ${segment.section}`}
           </span>
           <span
             style={{
@@ -106,7 +114,11 @@ export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
               textOverflow: "ellipsis",
             }}
           >
-            {isES ? segment.title : segment.toLocation}
+            {isShakedown && isES
+              ? "Créneau ouvert"
+              : isES
+              ? segment.title
+              : segment.toLocation}
           </span>
           <div
             style={{
@@ -120,7 +132,7 @@ export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
               {formatKm(segment.distanceKm)}
               <span style={unitStyle}>km</span>
             </span>
-            <span style={valueStyle}>{segment.startTime}</span>
+            <span style={valueStyle}>{timeValue}</span>
           </div>
         </div>
       </div>
@@ -153,12 +165,16 @@ export const CompactPanel: React.FC<Props> = ({ segment, visibility }) => {
         }}
       >
         <span style={labelStyle}>
-          Étape {segment.stage} · {formatKm(cumulativeKm)} /{" "}
-          {formatKm(stageTotal)} km
+          {isShakedown ? "Créneau libre" : `Étape ${segment.stage}`} ·{" "}
+          {isShakedown
+            ? timeValue
+            : `${formatKm(cumulativeKm)} / ${formatKm(stageTotal)} km`}
         </span>
-        <span style={{ ...labelStyle, color: colors.whiteFaint }}>
-          Total {formatKm(RALLY_TOTAL_KM)} km
-        </span>
+        {!isShakedown && (
+          <span style={{ ...labelStyle, color: colors.whiteFaint }}>
+            Total {formatKm(RALLY_TOTAL_KM)} km
+          </span>
+        )}
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import {
   getCumulativeKm,
   getStageTotalKm,
 } from "../data/segments";
+import { isShakedownStage } from "../rally.config";
 import { AnimatedBlock } from "./AnimatedBlock";
 import { Logo } from "./Logo";
 import { StageIndicator } from "./StageIndicator";
@@ -52,6 +53,7 @@ export const LeftPanel: React.FC<Props> = ({ segment, hide }) => {
   const cumulativeKm = getCumulativeKm(segment.id);
   const stageTotal = getStageTotalKm(segment.stage);
   const sectionMeta = SECTIONS.find((s) => s.number === segment.section);
+  const isShakedown = isShakedownStage(segment.stage);
 
   return (
     <div
@@ -95,30 +97,34 @@ export const LeftPanel: React.FC<Props> = ({ segment, hide }) => {
 
       <div style={{ flex: 1 }} />
 
-      <AnimatedBlock delay={32}>
-        <StageProgress
-          cumulativeKm={cumulativeKm}
-          totalKm={stageTotal}
-          label={`Progression étape ${segment.stage}`}
-        />
-      </AnimatedBlock>
+      {!isShakedown && (
+        <>
+          <AnimatedBlock delay={32}>
+            <StageProgress
+              cumulativeKm={cumulativeKm}
+              totalKm={stageTotal}
+              label={`Progression étape ${segment.stage}`}
+            />
+          </AnimatedBlock>
 
-      <Divider />
+          <Divider />
 
-      <AnimatedBlock delay={38}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <span style={labelStyle}>Total rallye</span>
-          <span style={valueMediumStyle}>
-            {formatKm(RALLY_TOTAL_KM)} km
-          </span>
-        </div>
-      </AnimatedBlock>
+          <AnimatedBlock delay={38}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span style={labelStyle}>Total rallye</span>
+              <span style={valueMediumStyle}>
+                {formatKm(RALLY_TOTAL_KM)} km
+              </span>
+            </div>
+          </AnimatedBlock>
+        </>
+      )}
     </div>
   );
 };

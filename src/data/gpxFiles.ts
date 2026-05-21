@@ -6,10 +6,15 @@ import { type Segment } from "./segments";
 const gpxPathFor = (stage: number, file: string) =>
   `GPX/E\u0301tape ${stage}/${file}`;
 
+const s0 = (file: string) => `GPX/Shakedown/${file}`;
 const s1 = (file: string) => gpxPathFor(1, file);
 const s2 = (file: string) => gpxPathFor(2, file);
 
 export const GPX_BY_SEGMENT_ID: Record<string, string> = {
+  "S0-L01": s0("R25 0.1 Li LAISSAC ASS ES ESSAIS.gpx"),
+  "S0-ES1": s0("R25 0.2 ES ESSAIS LAISSAC.gpx"),
+  "S0-L02": s0("R25 0.3 Li LA BOULDOIRE LAISSAC.gpx"),
+
   "S1-L01": s1("R26 1.01 Li RODEZ LAISSAC.gpx"),
   "S1-L02": s1("R26 1.02 Li LAISSAC CAMPUAC.gpx"),
   "S1-ES1": s1("R26 1.03 ES1-5 CAMPUAC ESPEYRAC.gpx"),

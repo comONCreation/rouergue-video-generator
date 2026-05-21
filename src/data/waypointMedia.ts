@@ -1,4 +1,5 @@
 import type { Segment } from "./segments";
+import { isShakedownStage } from "../rally.config";
 import { colors, mapCamera } from "../theme";
 
 export type WaypointMediaAsset = {
@@ -102,6 +103,9 @@ export const buildFirstWaypointMediaEntries = <
 >(
   keyPoints: T[]
 ): WaypointMediaEntry[] => {
+  // Cas particulier shakedown : pas de média sur les waypoints.
+  if (keyPoints.some((kp) => isShakedownStage(kp.segment.stage))) return [];
+
   const seenCueIds = new Set<string>();
   const entries: WaypointMediaEntry[] = [];
 

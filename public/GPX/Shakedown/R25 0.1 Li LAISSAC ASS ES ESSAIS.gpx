@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www.garmin.com/xmlschemas/GpxExtensionsv3.xsd http://www.garmin.com/xmlschemas/TrackPointExtension/v1 http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd http://www.garmin.com/xmlschemas/PowerExtension/v1 http://www.garmin.com/xmlschemas/PowerExtensionv1.xsd http://www.topografix.com/GPX/gpx_style/0/2 http://www.topografix.com/GPX/gpx_style/0/2/gpx_style.xsd" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1" xmlns:gpxx="http://www.garmin.com/xmlschemas/GpxExtensions/v3" xmlns:gpxpx="http://www.garmin.com/xmlschemas/PowerExtension/v1" xmlns:gpx_style="http://www.topografix.com/GPX/gpx_style/0/2">
+  <metadata>
+    <name>R25 0.1 Li LAISSAC ASS ES ESSAIS</name>
+    <author>
+      <name>gpx.studio</name>
+      <link href="https://gpx.studio"/>
+    </author>
+  </metadata>
+  <wpt lat="44.38452" lon="2.82166">
+    <ele>581.7257812500009</ele>
+    <name>Assistance Laissac</name>
+  </wpt>
+  <wpt lat="44.376835" lon="2.806477">
+    <ele>673.3317504882817</ele>
+    <name>Départ Shakedown</name>
+  </wpt>
+  <trk>
+    <name>R25 0.1 Li LAISSAC ASS ES ESSAIS</name>
+    <desc>Parcours de liaison</desc>
+    <trkseg>
+      <trkpt lat="44.38452" lon="2.82166"/>
+      <trkpt lat="44.38339" lon="2.82187"/>
+      <trkpt lat="44.3833" lon="2.82191"/>
+      <trkpt lat="44.38244" lon="2.82188"/>
+      <trkpt lat="44.38228" lon="2.82186"/>
+      <trkpt lat="44.3818" lon="2.82168"/>
+      <trkpt lat="44.38155" lon="2.8216"/>
+      <trkpt lat="44.38129" lon="2.82146"/>
+      <trkpt lat="44.38132" lon="2.82136"/>
+      <trkpt lat="44.38131" lon="2.82095"/>
+      <trkpt lat="44.38114" lon="2.81764"/>
+      <trkpt lat="44.38116" lon="2.81724"/>
+      <trkpt lat="44.38125" lon="2.81677"/>
+      <trkpt lat="44.38103" lon="2.81674"/>
+      <trkpt lat="44.38089" lon="2.81668"/>
+      <trkpt lat="44.38074" lon="2.81648"/>
+      <trkpt lat="44.38062" lon="2.81628"/>
+      <trkpt lat="44.38049" lon="2.8161"/>
+      <trkpt lat="44.37998" lon="2.81549"/>
+      <trkpt lat="44.3792" lon="2.81451"/>
+      <trkpt lat="44.37868" lon="2.81375"/>
+      <trkpt lat="44.37798" lon="2.81315"/>
+      <trkpt lat="44.37769" lon="2.81271"/>
+      <trkpt lat="44.3769" lon="2.81172"/>
+      <trkpt lat="44.37633" lon="2.81088"/>
+      <trkpt lat="44.37612" lon="2.81044"/>
+      <trkpt lat="44.37592" lon="2.80993"/>
+      <trkpt lat="44.37585" lon="2.80949"/>
+      <trkpt lat="44.37595" lon="2.80911"/>
+      <trkpt lat="44.37613" lon="2.80866"/>
+      <trkpt lat="44.37623" lon="2.80849"/>
+      <trkpt lat="44.37674" lon="2.80832"/>
+      <trkpt lat="44.37684" lon="2.80827"/>
+      <trkpt lat="44.37692" lon="2.80816"/>
+      <trkpt lat="44.37693" lon="2.80806"/>
+      <trkpt lat="44.37696" lon="2.80758"/>
+      <trkpt lat="44.376961" lon="2.80758">
+        <ele>679.14</ele>
+      </trkpt>
+      <trkpt lat="44.376928" lon="2.807105">
+        <ele>681.12</ele>
+      </trkpt>
+      <trkpt lat="44.376835" lon="2.806477">
+        <ele>680.76</ele>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

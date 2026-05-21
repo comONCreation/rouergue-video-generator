@@ -128,15 +128,16 @@ export const buildWaypointClusters = (
 };
 
 // Score plus haut = meilleur candidat. Préfère, dans l'ordre : variante du
-// segment actif, segment à venir vs déjà passé, segment le plus proche en
-// index, type le plus signifiant (start/finish > ZP > standard).
+// segment actif (pour conserver le contexte, ex. "ES 5" plutôt que "ES 1"),
+// puis variante déjà passée (un waypoint révélé doit le rester), puis segment
+// le plus proche en index, puis type le plus signifiant.
 const scoreVariant = (variant: WaypointVariant, activeSegmentIndex: number) => {
   const isActive = variant.segmentIndex === activeSegmentIndex ? 1 : 0;
-  const isUpcoming = variant.segmentIndex >= activeSegmentIndex ? 1 : 0;
+  const isPast = variant.segmentIndex < activeSegmentIndex ? 1 : 0;
   const proximity = -Math.abs(variant.segmentIndex - activeSegmentIndex);
   return [
     isActive,
-    isUpcoming,
+    isPast,
     proximity,
     KIND_PRIORITY[variant.decorated.kind],
   ];

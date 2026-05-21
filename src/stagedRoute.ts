@@ -63,17 +63,27 @@ export const loadStagedRoute = async (
   }[] = [];
 
   for (const { segment, route } of parsed) {
-    const startIndex = coordinates.length;
+    const routeStartIndex = coordinates.length;
+    let startIndex = routeStartIndex;
+    let hasNewCoordinate = false;
     for (let i = 0; i < route.coordinates.length; i++) {
       const coord = route.coordinates[i];
       const last = coordinates[coordinates.length - 1];
-      if (last && distanceMeters(last, coord) < mapRoute.thresholds.dedupeMeters)
+      if (last && distanceMeters(last, coord) < mapRoute.thresholds.dedupeMeters) {
+        if (i === 0) {
+          startIndex = coordinates.length - 1;
+        }
         continue;
+      }
+      if (!hasNewCoordinate && startIndex === routeStartIndex) {
+        startIndex = coordinates.length;
+      }
       coordinates.push(coord);
       elevations.push(route.elevations?.[i] ?? null);
+      hasNewCoordinate = true;
     }
     const endIndex = coordinates.length - 1;
-    if (endIndex >= startIndex) {
+    if (hasNewCoordinate && endIndex >= startIndex) {
       segmentBoundsByIndex.push({ segment, startIndex, endIndex });
     }
   }
@@ -132,7 +142,7 @@ export const findActiveSegmentIndex = (
   distance: number
 ): number => {
   for (let i = 0; i < route.segments.length; i++) {
-    if (distance <= route.segments[i].endDistance) return i;
+    if (distance < route.segments[i].endDistance) return i;
   }
   return route.segments.length - 1;
 };

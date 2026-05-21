@@ -2,6 +2,7 @@ import React from "react";
 import { colors, fonts } from "../theme";
 import type { Segment } from "../data/segments";
 import { formatKm } from "../format";
+import { isShakedownStage } from "../rally.config";
 import {
   bodySmallStyle,
   labelMicroStyle,
@@ -13,6 +14,20 @@ import {
 
 export const SegmentBlock: React.FC<{ segment: Segment }> = ({ segment }) => {
   const isES = segment.type === "ES";
+  const isShakedown = isShakedownStage(segment.stage);
+  const typeLabel = isShakedown
+    ? "Shakedown"
+    : isES
+    ? `ES ${segment.esNumber}`
+    : "Liaison";
+  const title =
+    isShakedown && isES
+      ? "Essais libres"
+      : isES
+      ? segment.title
+      : `→ ${segment.toLocation}`;
+  const timeLabel = isShakedown ? "Créneau" : isES ? "Départ ES" : "Départ";
+  const timeValue = segment.timeWindow ?? segment.startTime;
 
   return (
     <div
@@ -47,9 +62,9 @@ export const SegmentBlock: React.FC<{ segment: Segment }> = ({ segment }) => {
             textTransform: "uppercase",
           }}
         >
-          {isES ? `ES ${segment.esNumber}` : "Liaison"}
+          {typeLabel}
         </div>
-        {segment.badge && (
+        {segment.badge && !isShakedown && (
           <span
             style={{
               fontFamily: fonts.display,
@@ -69,12 +84,10 @@ export const SegmentBlock: React.FC<{ segment: Segment }> = ({ segment }) => {
       </div>
 
       {/* Titre */}
-      <div style={titleStyle}>
-        {isES ? segment.title : `→ ${segment.toLocation}`}
-      </div>
+      <div style={titleStyle}>{title}</div>
 
       {/* "Depuis ..." pour les liaisons */}
-      {!isES && segment.fromLocation && (
+      {!isES && segment.fromLocation && !isShakedown && (
         <div
           style={{
             ...bodySmallStyle,
@@ -102,11 +115,8 @@ export const SegmentBlock: React.FC<{ segment: Segment }> = ({ segment }) => {
           unit="km"
           accent
         />
-        <Stat
-          label={isES ? "Départ ES" : "Départ"}
-          value={segment.startTime}
-        />
-        {!isES && segment.endTime && (
+        <Stat label={timeLabel} value={timeValue} />
+        {!isES && segment.endTime && !isShakedown && (
           <Stat label="Arrivée" value={segment.endTime} />
         )}
       </div>
