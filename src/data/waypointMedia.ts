@@ -2,10 +2,16 @@ import type { Segment } from "./segments";
 import { isShakedownStage } from "../rally.config";
 import { colors, mapCamera } from "../theme";
 
-export type WaypointMediaAsset = {
-  type: "image" | "video";
-  src: string;
-};
+export type WaypointMediaAsset =
+  | {
+      type: "image";
+      src: string;
+    }
+  | {
+      type: "video";
+      src: string;
+      startFromSeconds?: number;
+    };
 
 export type WaypointMediaCue = {
   id: string;
@@ -57,7 +63,7 @@ export const WAYPOINT_MEDIA_CUES: WaypointMediaCue[] = [
     id: "assistance-laissac",
     title: "Assistance Laissac",
     matchLabels: ["Assistance Laissac"],
-    media: { type: "video", src: "videos/laissac.mp4" },
+    media: { type: "video", src: "videos/laissac.mp4", startFromSeconds: 15 },
     holdSeconds: WAYPOINT_MEDIA_HOLD_SECONDS,
     accentColor: colors.blue,
   },

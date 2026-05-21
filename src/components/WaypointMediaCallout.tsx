@@ -5,6 +5,7 @@ import {
   Sequence,
   interpolate,
   staticFile,
+  useVideoConfig,
 } from "remotion";
 import { clamp, easeInOutCubic } from "../map/cameraPath";
 import { colors, fonts, layout, mediaCallout, withAlpha } from "../theme";
@@ -131,6 +132,8 @@ const PlaceholderMedia: React.FC<{ cue: WaypointMediaCue }> = ({ cue }) => {
 };
 
 const MediaFrame: React.FC<{ cue: WaypointMediaCue }> = ({ cue }) => {
+  const { fps } = useVideoConfig();
+
   if (!cue.media) {
     return <PlaceholderMedia cue={cue} />;
   }
@@ -151,6 +154,7 @@ const MediaFrame: React.FC<{ cue: WaypointMediaCue }> = ({ cue }) => {
   return (
     <OffthreadVideo
       src={staticFile(cue.media.src)}
+      trimBefore={Math.round((cue.media.startFromSeconds ?? 0) * fps)}
       muted
       style={{
         width: "100%",
