@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "remotion studio",
     "build": "remotion bundle",
-    "render": "remotion render"
+    "render": "remotion render",
+    "render:concat": "node scripts/render-with-mapbox-cache.mjs FULL-ROUERGUE out/FULL-ROUERGUE.mp4"
   },
   "dependencies": {
     "@remotion/cli": "4.0.459",

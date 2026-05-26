@@ -1,5 +1,9 @@
 import React from "react";
-import { Composition } from "remotion";
+import { CalculateMetadataFunction, Composition } from "remotion";
+import {
+  FullRallyConcat,
+  type FullRallyConcatProps,
+} from "./compositions/FullRallyConcat";
 import { FullStageVideo } from "./compositions/FullRallyVideo";
 import { SEGMENTS } from "./data/segments";
 import { loadStagedRoute } from "./route/stagedRoute";
@@ -11,22 +15,49 @@ type FullStageProps = {
   stage: number;
 };
 
+const concatTransitionFrames = Math.round(1.2 * layout.fps);
+
+const getFullStageDurationInFrames = async (stage: number) => {
+  const segments = SEGMENTS.filter((segment) => segment.stage === stage);
+  const route = await loadStagedRoute(segments);
+  const timeline = buildStageTimeline(route);
+  const plaqueFrames =
+    RALLY.introPlaqueStage === stage
+      ? Math.round(stageIntro.plaque.durationSeconds * layout.fps)
+      : 0;
+
+  return Math.ceil(timeline.totalSeconds * layout.fps) + plaqueFrames;
+};
+
 const calculateFullStageMetadata = async ({
   props,
 }: {
   props: FullStageProps;
 }) => {
-  const segments = SEGMENTS.filter((segment) => segment.stage === props.stage);
-  const route = await loadStagedRoute(segments);
-  const timeline = buildStageTimeline(route);
-  const plaqueFrames =
-    RALLY.introPlaqueStage === props.stage
-      ? Math.round(stageIntro.plaque.durationSeconds * layout.fps)
-      : 0;
+  return {
+    durationInFrames: await getFullStageDurationInFrames(props.stage),
+  };
+};
+
+const calculateFullRallyMetadata: CalculateMetadataFunction<
+  FullRallyConcatProps
+> = async () => {
+  const stages = await Promise.all(
+    STAGE_NUMBERS.map(async (stage) => ({
+      stage,
+      durationInFrames: await getFullStageDurationInFrames(stage),
+    }))
+  );
 
   return {
-    durationInFrames:
-      Math.ceil(timeline.totalSeconds * layout.fps) + plaqueFrames,
+    durationInFrames: stages.reduce(
+      (total, stage) => total + stage.durationInFrames,
+      0
+    ),
+    props: {
+      stages,
+      transitionFrames: concatTransitionFrames,
+    },
   };
 };
 
@@ -44,5 +75,17 @@ export const Root: React.FC = () => (
         defaultProps={{ stage }}
       />
     ))}
+    <Composition
+      id="FULL-ROUERGUE"
+      component={FullRallyConcat}
+      width={layout.width}
+      height={layout.height}
+      fps={layout.fps}
+      calculateMetadata={calculateFullRallyMetadata}
+      defaultProps={{
+        stages: [],
+        transitionFrames: concatTransitionFrames,
+      }}
+    />
   </>
 );

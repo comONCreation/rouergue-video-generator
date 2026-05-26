@@ -34,6 +34,20 @@ import {
   updateMapFrame,
 } from "../map/continuousMapFrame";
 
+const mapboxProxyUrl = process.env.REMOTION_MAPBOX_PROXY_URL;
+
+const transformMapboxRequest = mapboxProxyUrl
+  ? (url: string): mapboxgl.RequestParameters => {
+      if (!url.startsWith("https://api.mapbox.com/")) {
+        return { url };
+      }
+
+      return {
+        url: `${mapboxProxyUrl}?url=${encodeURIComponent(url)}`,
+      };
+    }
+  : undefined;
+
 type ContinuousStageMapProps = {
   route: StagedRoute;
   timeline: StageTimeline;
@@ -113,7 +127,7 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
         );
         cameraPathRef.current = cameraPath;
         mapboxgl.accessToken = token;
-        mapboxgl.maxParallelImageRequests = 32;
+        mapboxgl.maxParallelImageRequests = mapboxProxyUrl ? 6 : 16;
 
         const start = cameraPath[0];
         const map = new mapboxgl.Map({
@@ -129,6 +143,9 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
           refreshExpiredTiles: false,
           logoPosition: "bottom-right",
           attributionControl: false,
+          collectResourceTiming: false,
+          performanceMetricsCollection: false,
+          transformRequest: transformMapboxRequest,
         });
 
         mapRef.current = map;
@@ -182,7 +199,13 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
       cameraPathRef.current = [];
       terrainAltitudeStateRef.current = { frame: null, altitudeMeters: null };
     };
-  }, [cameraDurationInFrames, fps, route, timeline, waypointClusters]);
+  }, [
+    cameraDurationInFrames,
+    fps,
+    route,
+    timeline,
+    waypointClusters,
+  ]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -228,7 +251,14 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
       map.off("render", complete);
       complete();
     };
-  }, [frame, fps, isReady, route, startDelayFrames, waypointClusters]);
+  }, [
+    frame,
+    fps,
+    isReady,
+    route,
+    startDelayFrames,
+    waypointClusters,
+  ]);
 
   if (error) {
     return <MapFallback>{error}</MapFallback>;

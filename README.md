@@ -10,6 +10,8 @@ livrables :
   trace, holds aux key points (départ/arrivée d'étape, départ/arrivée
   d'ES, assistance, regroupement) et overlay qui se met à jour à chaque
   segment traversé.
+- **Export concaténé** — `FULL-ROUERGUE` enchaîne `FULL-S0`, `FULL-S1` et
+  `FULL-S2` avec un fondu au noir entre les compositions.
 - **Studio Remotion** — prévisualisation interactive de toutes les
   compositions avec timeline.
 
@@ -55,12 +57,17 @@ listées et scrubbables.
 npm run render -- S1-ES1      # un segment unitaire
 npm run render -- FULL-S1     # étape 1 complète, en continu
 npm run render -- FULL-S2     # étape 2 complète, en continu
+npm run render:concat         # export MP4 H.264 concaténé
 ```
 
 La commande utilise la CLI Remotion standard (`remotion render`). Les paramètres
 d'export sont centralisés dans `remotion.config.ts` : ProRes HQ, frames JPEG 95,
 pixel format `yuv422p10le`, espace couleur BT.709 et concurrence limitée à 1
 pour préserver la stabilité des chargements Mapbox satellite.
+
+`npm run render:concat` active le preset `REMOTION_EXPORT_PRESET=h264` pour
+produire `out/FULL-ROUERGUE.mp4` en H.264, `yuv420p`, preset x264 `slow` et
+bitrate vidéo cible `32M`.
 
 Sans chemin de sortie explicite, Remotion écrit automatiquement dans `out/` :
 `npm run render -- S1-ES1` produit `out/S1-ES1.mov`.

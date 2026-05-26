@@ -30,7 +30,10 @@ import {
 import { colors, fonts, gradients, mapCamera, stageIntro } from "../theme";
 import { RALLY } from "../rally.config";
 
-type Props = { stage: number };
+type Props = {
+  stage: number;
+  renderDurationInFrames?: number;
+};
 
 const StageStatus: React.FC<{ message: string }> = ({ message }) => (
   <AbsoluteFill
@@ -101,15 +104,19 @@ const buildSegmentDisplayEntries = (
   return entries;
 };
 
-export const FullStageVideo: React.FC<Props> = ({ stage }) => {
+export const FullStageVideo: React.FC<Props> = ({
+  stage,
+  renderDurationInFrames,
+}) => {
   const { fps, durationInFrames } = useVideoConfig();
+  const stageDurationInFrames = renderDurationInFrames ?? durationInFrames;
   const showsIntroPlaque = RALLY.introPlaqueStage === stage;
   const plaqueIntroFrames = showsIntroPlaque
     ? Math.round(stageIntro.plaque.durationSeconds * fps)
     : 0;
   const routeDurationInFrames = Math.max(
     1,
-    durationInFrames - plaqueIntroFrames
+    stageDurationInFrames - plaqueIntroFrames
   );
   const [route, setRoute] = useState<StagedRoute | null>(null);
   const [timeline, setTimeline] = useState<StageTimeline | null>(null);
