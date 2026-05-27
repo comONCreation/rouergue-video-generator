@@ -188,11 +188,11 @@ export const mapCamera = {
       minZoom: 10.8,
     },
   },
-  fadeDurationMs: 1000,
+  fadeDurationMs: 0,
   renderTimeouts: {
     loadMapMs: 90000,
-    frameMs: 5000,
-    frameFallbackMs: 2500,
+    frameMs: 30000,
+    frameFallbackMs: 12000,
   },
 };
 

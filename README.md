@@ -10,8 +10,10 @@ livrables :
   trace, holds aux key points (départ/arrivée d'étape, départ/arrivée
   d'ES, assistance, regroupement) et overlay qui se met à jour à chaque
   segment traversé.
-- **Export concaténé** — `FULL-ROUERGUE` enchaîne `FULL-S0`, `FULL-S1` et
-  `FULL-S2` avec un fondu au noir entre les compositions.
+- **Export rallye complet** — `npm run render:concat` rend `FULL-S0`,
+  `FULL-S1` et `FULL-S2` séparément, puis les assemble avec un fondu au noir
+  via FFmpeg pour produire `out/FULL-ROUERGUE.mp4`. `npm run render:full`
+  exporte directement `FULL-ROUERGUE` en H.264 avec la CLI Remotion standard.
 - **Studio Remotion** — prévisualisation interactive de toutes les
   compositions avec timeline.
 
@@ -57,7 +59,8 @@ listées et scrubbables.
 npm run render -- S1-ES1      # un segment unitaire
 npm run render -- FULL-S1     # étape 1 complète, en continu
 npm run render -- FULL-S2     # étape 2 complète, en continu
-npm run render:concat         # export MP4 H.264 concaténé
+npm run render:full           # export direct H.264 de FULL-ROUERGUE
+npm run render:concat         # export stable : étapes séparées + assemblage
 ```
 
 La commande utilise la CLI Remotion standard (`remotion render`). Les paramètres
@@ -65,9 +68,36 @@ d'export sont centralisés dans `remotion.config.ts` : ProRes HQ, frames JPEG 95
 pixel format `yuv422p10le`, espace couleur BT.709 et concurrence limitée à 1
 pour préserver la stabilité des chargements Mapbox satellite.
 
-`npm run render:concat` active le preset `REMOTION_EXPORT_PRESET=h264` pour
-produire `out/FULL-ROUERGUE.mp4` en H.264, `yuv420p`, preset x264 `slow` et
-bitrate vidéo cible `32M`.
+`npm run render:concat` ne rend plus la composition `FULL-ROUERGUE` d'un seul
+bloc. Le script rend les parties dans `out/full-rally-parts/` sans proxy-cache
+Mapbox local, puis utilise FFmpeg pour appliquer les fondus noirs et
+assembler `out/FULL-ROUERGUE.mp4` en H.264, `yuv420p`, preset x264 `slow`
+et bitrate vidéo cible `32M`. Le script privilégie le FFmpeg système pour
+l'assemblage, car le FFmpeg embarqué par Remotion ne contient pas tous les
+filtres vidéo nécessaires aux fondus. La composition `FULL-ROUERGUE` reste
+disponible dans le Studio pour prévisualiser l'enchaînement.
+
+`npm run render:full` exécute l'export direct H.264 de `FULL-ROUERGUE`, sans
+intermédiaires ProRes ni assemblage FFmpeg :
+
+```bash
+REMOTION_EXPORT_PRESET=h264 npm run render -- FULL-ROUERGUE
+```
+
+Pour choisir le fichier de sortie :
+
+```bash
+npm run render:full -- out/FULL-ROUERGUE-direct.mp4
+```
+
+Options utiles :
+
+```bash
+npm run render:concat -- out/exports/rouergue.mp4
+REMOTION_FULL_RALLY_SKIP_RENDER=1 npm run render:concat
+REMOTION_FULL_RALLY_STAGE_PRESET=h264 npm run render:concat
+REMOTION_FULL_RALLY_X264_PRESET=veryfast npm run render:concat
+```
 
 Sans chemin de sortie explicite, Remotion écrit automatiquement dans `out/` :
 `npm run render -- S1-ES1` produit `out/S1-ES1.mov`.

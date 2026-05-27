@@ -34,20 +34,6 @@ import {
   updateMapFrame,
 } from "../map/continuousMapFrame";
 
-const mapboxProxyUrl = process.env.REMOTION_MAPBOX_PROXY_URL;
-
-const transformMapboxRequest = mapboxProxyUrl
-  ? (url: string): mapboxgl.RequestParameters => {
-      if (!url.startsWith("https://api.mapbox.com/")) {
-        return { url };
-      }
-
-      return {
-        url: `${mapboxProxyUrl}?url=${encodeURIComponent(url)}`,
-      };
-    }
-  : undefined;
-
 type ContinuousStageMapProps = {
   route: StagedRoute;
   timeline: StageTimeline;
@@ -127,7 +113,6 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
         );
         cameraPathRef.current = cameraPath;
         mapboxgl.accessToken = token;
-        mapboxgl.maxParallelImageRequests = mapboxProxyUrl ? 6 : 16;
 
         const start = cameraPath[0];
         const map = new mapboxgl.Map({
@@ -140,12 +125,11 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
           interactive: false,
           preserveDrawingBuffer: true,
           fadeDuration: mapCamera.fadeDurationMs,
-          refreshExpiredTiles: false,
+          refreshExpiredTiles: true,
           logoPosition: "bottom-right",
           attributionControl: false,
           collectResourceTiming: false,
           performanceMetricsCollection: false,
-          transformRequest: transformMapboxRequest,
         });
 
         mapRef.current = map;
@@ -171,12 +155,25 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
               terrainAltitudeStateRef.current
             );
 
-            map.once("idle", () => {
-              if (cancelled) return;
+            let removeInitialSettledListeners = () => {};
+            const completeInitialWhenSettled = () => {
+              if (cancelled) {
+                removeInitialSettledListeners();
+                return;
+              }
+              if (!map.loaded() || !map.areTilesLoaded()) return;
+              removeInitialSettledListeners();
               setIsReady(true);
               complete();
-            });
+            };
+            removeInitialSettledListeners = () => {
+              map.off("idle", completeInitialWhenSettled);
+              map.off("render", completeInitialWhenSettled);
+            };
+            map.on("idle", completeInitialWhenSettled);
+            map.on("render", completeInitialWhenSettled);
             map.triggerRepaint();
+            completeInitialWhenSettled();
           } catch (err) {
             fail(err instanceof Error ? err.message : String(err));
           }
@@ -227,7 +224,13 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
       continueRender(handle);
     };
 
-    map.once("render", complete);
+    const completeWhenSettled = () => {
+      if (!map.loaded() || !map.areTilesLoaded()) return;
+      complete();
+    };
+
+    map.on("idle", completeWhenSettled);
+    map.on("render", completeWhenSettled);
     updateMapFrame(
       map,
       route,
@@ -240,6 +243,7 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
       terrainAltitudeStateRef.current
     );
     map.triggerRepaint();
+    completeWhenSettled();
 
     const timeout = window.setTimeout(
       complete,
@@ -248,7 +252,8 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
 
     return () => {
       window.clearTimeout(timeout);
-      map.off("render", complete);
+      map.off("idle", completeWhenSettled);
+      map.off("render", completeWhenSettled);
       complete();
     };
   }, [
