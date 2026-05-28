@@ -6,6 +6,7 @@ import {
   useCurrentFrame,
 } from "remotion";
 import { colors } from "../theme";
+import { FullRallyBackgroundAudio } from "../components/FullRallyBackgroundAudio";
 import { FullStageVideo } from "./FullRallyVideo";
 
 export type FullStageRenderPlan = {
@@ -51,6 +52,7 @@ export const FullRallyConcat: React.FC<FullRallyConcatProps> = ({
 
   return (
     <AbsoluteFill style={{ backgroundColor: colors.background }}>
+      <FullRallyBackgroundAudio stages={stageEntries} />
       {stageEntries.map((entry) => (
         <Sequence
           key={`stage-${entry.stage}`}
@@ -60,6 +62,7 @@ export const FullRallyConcat: React.FC<FullRallyConcatProps> = ({
         >
           <FullStageVideo
             stage={entry.stage}
+            includeBackgroundAudio={false}
             renderDurationInFrames={entry.durationInFrames}
           />
         </Sequence>

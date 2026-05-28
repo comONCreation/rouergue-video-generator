@@ -6,6 +6,7 @@ out/
 
 # Médias locaux lourds
 public/videos/
+public/audio/
 
 # Cache Remotion / build
 .cache/

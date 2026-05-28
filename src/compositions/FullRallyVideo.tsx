@@ -14,6 +14,7 @@ import {
 } from "../components/Plaque";
 import { SegmentOverlay } from "./SegmentOverlay";
 import { StageIntroOverlay } from "../components/StageIntroOverlay";
+import { StageAudio } from "../components/StageAudio";
 import { SEGMENTS } from "../data/segments";
 import {
   findActiveSegmentSpan,
@@ -32,6 +33,7 @@ import { RALLY } from "../rally.config";
 
 type Props = {
   stage: number;
+  includeBackgroundAudio?: boolean;
   renderDurationInFrames?: number;
 };
 
@@ -106,6 +108,7 @@ const buildSegmentDisplayEntries = (
 
 export const FullStageVideo: React.FC<Props> = ({
   stage,
+  includeBackgroundAudio = true,
   renderDurationInFrames,
 }) => {
   const { fps, durationInFrames } = useVideoConfig();
@@ -191,6 +194,13 @@ export const FullStageVideo: React.FC<Props> = ({
 
   return (
     <AbsoluteFill style={{ backgroundColor: colors.background }}>
+      <StageAudio
+        stage={stage}
+        route={route}
+        timeline={timeline}
+        includeBackgroundAudio={includeBackgroundAudio}
+        startDelayFrames={plaqueIntroFrames}
+      />
       <ContinuousStageMap
         route={route}
         timeline={timeline}
