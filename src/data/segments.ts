@@ -30,6 +30,12 @@ export type Segment = {
   date: string;
   /** Indication ajoutée dans le panneau (ex. "Refueling", "Super-spéciale") */
   badge?: string;
+  /**
+   * Active le zoom rapproché (mapCamera.zoom.close) sur ce segment. Utilisé
+   * pour les portions urbaines/spéciales où le tracé est très resserré
+   * (ex. super-spéciale Rodez Agglomération + liaison podium).
+   */
+  closeZoom?: boolean;
 };
 
 // Builder de segment : injecte `stage` + `date` dérivée de l'édition.
@@ -530,6 +536,7 @@ export const SEGMENTS: Segment[] = [
     startTime: "17:36",
     section: 6,
     badge: "Super-spéciale",
+    closeZoom: true,
   }),
   s2({
     id: "S2-L12",
@@ -543,6 +550,7 @@ export const SEGMENTS: Segment[] = [
     endTime: "17:51",
     section: 6,
     badge: "Arrivée du rallye",
+    closeZoom: true,
   }),
 ];
 

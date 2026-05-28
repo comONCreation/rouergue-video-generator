@@ -58,6 +58,16 @@ const readElevation = (node: Element): number | null => {
   return Number.isFinite(value) ? value : null;
 };
 
+// Les waypoints "reco" (reconnaissance d'une ES précise, ex. la reco ES 15
+// dans la liaison S2-L05) référencent leur ES dans le nom et partagent les
+// coordonnées du vrai départ/arrivée. Test à utiliser dans la timeline, le
+// picker de clusters et le scheduler audio pour préserver leur traitement
+// dédié (pas de renumérotation, zoom rapproché, pas de jingle "start-es", …).
+export const isRecoWaypointName = (name: string | undefined): boolean =>
+  /reco/i.test(
+    name?.normalize("NFD").replace(/\p{Diacritic}/gu, "") ?? ""
+  );
+
 const classifyWaypoint = (name: string, symbol: string): WaypointKind => {
   const normalizedName = normalizeText(name);
   const normalizedSymbol = normalizeText(symbol);

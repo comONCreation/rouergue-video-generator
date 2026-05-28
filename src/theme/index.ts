@@ -123,6 +123,10 @@ export const mapCamera = {
   zoom: {
     es: 14.5,
     liaison: 14,
+    // Zoom rapproché pour les portions urbaines/spéciales où le tracé est très
+    // resserré : reco ES 15 dans S2-L05, et tous les segments avec
+    // `closeZoom: true` (super-spéciale Rodez Agglomération, liaison podium).
+    close: 16,
   },
   pitch: {
     es: 50,

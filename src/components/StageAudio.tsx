@@ -12,7 +12,11 @@ import {
   getStageIntroCardSeconds,
   type StageTimeline,
 } from "../route/stageTimeline";
-import { distanceMeters, type LonLat } from "../route/gpx";
+import {
+  distanceMeters,
+  isRecoWaypointName,
+  type LonLat,
+} from "../route/gpx";
 import type { StagedRoute, StagedSegmentSpan } from "../route/stagedRoute";
 
 type StageAudioProps = {
@@ -155,7 +159,12 @@ export const buildScheduledAudioCues = ({
       durationFrames: durationFramesForCue(cue, fps),
     });
 
-    if (keyPoint.type === "es-start") {
+    // Les key points "reco" gardent leur voix dédiée (cue ci-dessus) mais
+    // ne déclenchent pas le jingle "start-es" (pas un vrai départ d'ES).
+    if (
+      keyPoint.type === "es-start" &&
+      !isRecoWaypointName(keyPoint.rawWaypoint?.name)
+    ) {
       const specialStartCue = getSpecialStartAudioCue();
       scheduledCues.push({
         ...specialStartCue,

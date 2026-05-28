@@ -1,5 +1,6 @@
 import {
   elevationAtDistance,
+  isRecoWaypointName,
   pointAtDistance,
   type LonLat,
   type ParsedGpx,
@@ -38,6 +39,25 @@ const pitchForSegment = (segment: Segment) =>
 
 const zoomForSegment = (segment: Segment) =>
   segment.type === "ES" ? mapCamera.zoom.es : mapCamera.zoom.liaison;
+
+// Repère la plage de distance "reco" (entre le départ et l'arrivée reco) pour
+// y appliquer un zoom dédié pendant le rendu. `null` si aucun point reco.
+const findRecoDistanceSpan = (
+  timeline: StageTimeline
+): { startDistance: number; endDistance: number } | null => {
+  const start = timeline.keyPoints.find(
+    (kp) => kp.type === "es-start" && isRecoWaypointName(kp.rawWaypoint?.name)
+  );
+  if (!start) return null;
+  const end = timeline.keyPoints.find(
+    (kp) =>
+      kp.type === "es-finish" &&
+      isRecoWaypointName(kp.rawWaypoint?.name) &&
+      kp.distance >= start.distance
+  );
+  if (!end) return null;
+  return { startDistance: start.distance, endDistance: end.distance };
+};
 
 // Vue "ParsedGpx" sur la route complète, pour réutiliser les helpers
 // (pointAtDistance, elevationAtDistance, getSmoothedBearing) sans dupliquer
@@ -91,6 +111,7 @@ export const buildContinuousCameraPath = (
   const fullLeftPadding = layout.panelWidth + mapCamera.padding.leftPanelGap;
 
   const routeAsParsed = asParsedRoute(route);
+  const recoSpan = findRecoDistanceSpan(timeline);
 
   const states: CameraState[] = [];
   let center = pointAtDistance(routeAsParsed, centerLead).point;
@@ -122,7 +143,14 @@ export const buildContinuousCameraPath = (
     );
     const activeSegment = findActiveSegmentSpan(route, distance).segment;
     const targetPitch = pitchForSegment(activeSegment);
-    const targetZoom = zoomForSegment(activeSegment);
+    const inRecoSpan =
+      recoSpan !== null &&
+      distance >= recoSpan.startDistance &&
+      distance <= recoSpan.endDistance;
+    const useCloseZoom = inRecoSpan || activeSegment.closeZoom === true;
+    const targetZoom = useCloseZoom
+      ? mapCamera.zoom.close
+      : zoomForSegment(activeSegment);
     const targetTerrainAltitude = elevationAtDistance(
       routeAsParsed,
       targetCenterDistance

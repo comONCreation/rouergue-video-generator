@@ -1,5 +1,6 @@
 import {
   distanceMeters,
+  isRecoWaypointName,
   routeDistanceAtPoint,
   type DisplayWaypoint,
   type GpxWaypoint,
@@ -47,6 +48,10 @@ const decorateWaypointForSegment = (
   segment: Segment
 ): GpxWaypoint => {
   if (waypoint.kind === "public-zone") return waypoint;
+  // Les waypoints "reco" (reco ES 15) référencent une ES précise dans leur nom :
+  // pas de renumérotation contextuelle, sinon "ES 15" devient "ES 12" via
+  // findAdjacentEsNumber sur la liaison parente.
+  if (isRecoWaypointName(waypoint.name)) return waypoint;
   if (segment.type === "ES") {
     if (waypoint.kind === "start" || waypoint.kind === "finish") {
       return {
@@ -150,11 +155,32 @@ const compareScores = (a: number[], b: number[]) => {
   return 0;
 };
 
+// Les variantes "reco" (Départ/Arrivée reco ES 15) coïncident en coordonnées
+// avec les vrais départ/arrivée d'ES 15. Hors de la liaison parente, elles ne
+// doivent jamais être sélectionnées par le picker — sinon, comme le marker
+// layer ne se base que sur revealDistanceMeters, le pin reste affiché dans
+// toutes les liaisons et spéciales suivantes jusqu'à ce qu'une autre variante
+// prenne la main.
+const isRecoVariantOutOfScope = (
+  variant: WaypointVariant,
+  activeSegmentIndex: number
+): boolean =>
+  isRecoWaypointName(variant.decorated.name) &&
+  variant.segmentIndex !== activeSegmentIndex;
+
+// Retourne `null` si le cluster ne contient que des variantes reco hors champ
+// (cas où aucun vrai pin ne coïncide). On préfère ne rien afficher plutôt que
+// de retomber sur la variante reco — l'objectif de la filtration serait sinon
+// annulé par le fallback.
 const pickVariantForActiveSegment = (
   cluster: WaypointCluster,
   activeSegmentIndex: number
-): DisplayWaypoint =>
-  cluster.variants.reduce((best, candidate) =>
+): DisplayWaypoint | null => {
+  const inScope = cluster.variants.filter(
+    (v) => !isRecoVariantOutOfScope(v, activeSegmentIndex)
+  );
+  if (inScope.length === 0) return null;
+  return inScope.reduce((best, candidate) =>
     compareScores(
       scoreVariant(candidate, activeSegmentIndex),
       scoreVariant(best, activeSegmentIndex)
@@ -162,9 +188,12 @@ const pickVariantForActiveSegment = (
       ? candidate
       : best
   ).decorated;
+};
 
 export const buildActiveDisplayWaypoints = (
   clusters: WaypointCluster[],
   activeSegmentIndex: number
 ): DisplayWaypoint[] =>
-  clusters.map((c) => pickVariantForActiveSegment(c, activeSegmentIndex));
+  clusters
+    .map((c) => pickVariantForActiveSegment(c, activeSegmentIndex))
+    .filter((waypoint): waypoint is DisplayWaypoint => waypoint !== null);
