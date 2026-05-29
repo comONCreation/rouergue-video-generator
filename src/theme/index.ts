@@ -109,6 +109,62 @@ export const stageIntro = {
   },
 };
 
+// Récap de fin d'étape (FULL-S1, FULL-S2) : carte complète de l'étape figée
+// (vue de dessus) + panneau des kilométrages parcourus.
+export const stageRecap = {
+  durationSeconds: 12,
+  // Fondu d'entrée : enchaîne depuis la vue cinématique finale vers le récap.
+  fadeInSeconds: 0.7,
+  map: {
+    // Marges du fitBounds : la gauche réserve la place du panneau récap.
+    padding: {
+      top: 110,
+      bottom: 110,
+      left: layout.panelWidth + 110,
+      right: 150,
+    },
+    // Vue de dessus pour montrer toute l'étape d'un seul coup.
+    pitch: 0,
+    bearing: 0,
+    // Évite un sur-zoom sur une étape compacte.
+    maxZoom: 13.5,
+  },
+  route: {
+    coreOpacity: 1,
+    outlineColor: "#08182b",
+    outlineOpacity: 0.6,
+    outlineExtraWidth: 4,
+    lineWidthStops: {
+      lowZoom: 8,
+      lowWidth: 3,
+      midZoom: 11,
+      midWidth: 5.5,
+      highZoom: 14,
+      highWidth: 8.5,
+    },
+  },
+  // Pins zones publiques plus discrets que sur la carte cinématique : la vue
+  // d'ensemble en accumule plusieurs par spéciale.
+  publicZone: {
+    iconSize: 0.5,
+  },
+  // Libellés des spéciales (noms fusionnés des passages : "ES 1-5 …").
+  esLabel: {
+    color: colors.orange,
+    haloColor: "rgba(7, 17, 31, 0.95)",
+    haloWidth: 1.9,
+    haloBlur: 0.4,
+    letterSpacing: 0.02,
+    maxWidth: 20,
+    sizeStops: {
+      lowZoom: 10,
+      lowSize: 21,
+      highZoom: 13,
+      highSize: 29,
+    },
+  },
+} as const;
+
 export const mediaCallout = {
   cardWidth: 600,
   cardHeight: 400,

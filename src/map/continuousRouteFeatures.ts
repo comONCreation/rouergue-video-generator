@@ -36,6 +36,17 @@ export const buildFullRouteFeatures = (
     .map(({ span }) => buildSegmentLineFeature(span, span.coordinates)),
 });
 
+// Tous les segments de l'étape, sans filtre de visibilité : utilisé par le
+// récap de fin d'étape qui affiche la carte complète d'un seul coup.
+export const buildAllRouteFeatures = (
+  route: StagedRoute
+): FeatureCollection<LineString> => ({
+  type: "FeatureCollection",
+  features: route.segments
+    .filter((span) => span.coordinates.length >= 2)
+    .map((span) => buildSegmentLineFeature(span, span.coordinates)),
+});
+
 export const buildProgressFeatures = (
   route: StagedRoute,
   distance: number,

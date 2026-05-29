@@ -9,7 +9,10 @@ livrables :
   enchaînent toute l'étape sans coupure : caméra cinématique qui suit la
   trace, holds aux key points (départ/arrivée d'étape, départ/arrivée
   d'ES, assistance, regroupement) et overlay qui se met à jour à chaque
-  segment traversé.
+  segment traversé. Chaque étape officielle se termine par un **récap de
+  fin d'étape** : carte complète figée (vue de dessus) montrant les
+  spéciales (orange, avec leurs zones publiques) et les liaisons (bleu),
+  plus les kilométrages parcourus (ES, liaison, total).
 - **Export rallye complet** — `npm run render:concat` rend `FULL-S0`,
   `FULL-S1` et `FULL-S2` séparément, puis les assemble avec un fondu au noir
   via FFmpeg pour produire `out/FULL-ROUERGUE.mp4`. `npm run render:full`
@@ -177,6 +180,9 @@ src/
   components/
     RallyMap.tsx         → carte Mapbox pour un segment
     ContinuousStageMap.tsx → carte Mapbox pour une étape continue
+    StageRecap.tsx       → récap de fin d'étape (carte + panneau + fondu)
+    StageRecapMap.tsx    → carte complète figée de l'étape (vue de dessus)
+    StageRecapOverlay.tsx → panneau récap (kilométrages ES/liaison/total)
     MapFallback.tsx      → écran d'erreur partagé
     LeftPanel.tsx        → panneau d'info principal
     CompactPanel.tsx     → bandeau compact (après minimisation)

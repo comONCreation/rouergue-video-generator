@@ -581,6 +581,16 @@ export const RALLY_TOTAL_KM = sumKm((s) => s.stage > 0);
 export const getStageTotalKm = (stage: number) =>
   sumKm((s) => s.stage === stage);
 
+// Kilométrage chronométré (somme des ES) parcouru sur l'étape. Les boucles
+// répétées (ex. ES 1 = ES 5) sont comptées à chaque passage : c'est la
+// distance réellement parcourue, pas le linéaire unique.
+export const getStageEsKm = (stage: number) =>
+  sumKm((s) => s.stage === stage && s.type === "ES");
+
+// Kilométrage de liaison parcouru sur l'étape.
+export const getStageLiaisonKm = (stage: number) =>
+  sumKm((s) => s.stage === stage && s.type === "LIAISON");
+
 export const getSegmentById = (id: string) =>
   SEGMENTS.find((s) => s.id === id);
 

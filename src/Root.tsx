@@ -8,6 +8,7 @@ import { FullStageVideo } from "./compositions/FullRallyVideo";
 import { SEGMENTS } from "./data/segments";
 import { loadStagedRoute } from "./route/stagedRoute";
 import { buildStageTimeline } from "./route/stageTimeline";
+import { getStageRecapDurationInFrames } from "./route/stageRecap";
 import { RALLY, STAGE_NUMBERS } from "./rally.config";
 import { layout, stageIntro } from "./theme";
 
@@ -25,8 +26,11 @@ const getFullStageDurationInFrames = async (stage: number) => {
     RALLY.introPlaqueStage === stage
       ? Math.round(stageIntro.plaque.durationSeconds * layout.fps)
       : 0;
+  const recapFrames = getStageRecapDurationInFrames(stage);
 
-  return Math.ceil(timeline.totalSeconds * layout.fps) + plaqueFrames;
+  return (
+    Math.ceil(timeline.totalSeconds * layout.fps) + plaqueFrames + recapFrames
+  );
 };
 
 const calculateFullStageMetadata = async ({

@@ -14,7 +14,9 @@ import {
 } from "../components/Plaque";
 import { SegmentOverlay } from "./SegmentOverlay";
 import { StageIntroOverlay } from "../components/StageIntroOverlay";
+import { StageRecap } from "../components/StageRecap";
 import { StageAudio } from "../components/StageAudio";
+import { getStageRecapDurationInFrames } from "../route/stageRecap";
 import { SEGMENTS } from "../data/segments";
 import {
   findActiveSegmentSpan,
@@ -117,9 +119,10 @@ export const FullStageVideo: React.FC<Props> = ({
   const plaqueIntroFrames = showsIntroPlaque
     ? Math.round(stageIntro.plaque.durationSeconds * fps)
     : 0;
+  const recapFrames = getStageRecapDurationInFrames(stage, fps);
   const routeDurationInFrames = Math.max(
     1,
-    stageDurationInFrames - plaqueIntroFrames
+    stageDurationInFrames - plaqueIntroFrames - recapFrames
   );
   const [route, setRoute] = useState<StagedRoute | null>(null);
   const [timeline, setTimeline] = useState<StageTimeline | null>(null);
@@ -247,6 +250,15 @@ export const FullStageVideo: React.FC<Props> = ({
         ))}
         <PlaqueBug />
       </Sequence>
+      {recapFrames > 0 && (
+        <Sequence
+          from={plaqueIntroFrames + routeDurationInFrames}
+          durationInFrames={recapFrames}
+          layout="none"
+        >
+          <StageRecap stage={stage} route={route} />
+        </Sequence>
+      )}
     </AbsoluteFill>
   );
 };

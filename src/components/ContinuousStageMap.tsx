@@ -20,6 +20,7 @@ import {
 import { buildFirstWaypointMediaEntries } from "../data/waypointMedia";
 import { MapFallback } from "./MapFallback";
 import { WaypointMediaCallout } from "./WaypointMediaCallout";
+import { MapEdgeScrim } from "./MapEdgeScrim";
 import { loadAllPinImages } from "../map/mapLayers";
 import {
   asParsedRoute,
@@ -33,6 +34,10 @@ import {
   addRouteLayers,
   updateMapFrame,
 } from "../map/continuousMapFrame";
+import {
+  STATIC_RENDER_MAP_OPTIONS,
+  completeWhenMapSettled,
+} from "../map/mapboxSetup";
 
 type ContinuousStageMapProps = {
   route: StagedRoute;
@@ -122,14 +127,7 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
           zoom: start.zoom,
           bearing: start.bearing,
           pitch: start.pitch,
-          interactive: false,
-          preserveDrawingBuffer: true,
-          fadeDuration: mapCamera.fadeDurationMs,
-          refreshExpiredTiles: true,
-          logoPosition: "bottom-right",
-          attributionControl: false,
-          collectResourceTiming: false,
-          performanceMetricsCollection: false,
+          ...STATIC_RENDER_MAP_OPTIONS,
         });
 
         mapRef.current = map;
@@ -155,25 +153,13 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
               terrainAltitudeStateRef.current
             );
 
-            let removeInitialSettledListeners = () => {};
-            const completeInitialWhenSettled = () => {
-              if (cancelled) {
-                removeInitialSettledListeners();
-                return;
-              }
-              if (!map.loaded() || !map.areTilesLoaded()) return;
-              removeInitialSettledListeners();
-              setIsReady(true);
-              complete();
-            };
-            removeInitialSettledListeners = () => {
-              map.off("idle", completeInitialWhenSettled);
-              map.off("render", completeInitialWhenSettled);
-            };
-            map.on("idle", completeInitialWhenSettled);
-            map.on("render", completeInitialWhenSettled);
-            map.triggerRepaint();
-            completeInitialWhenSettled();
+            completeWhenMapSettled(map, {
+              isCancelled: () => cancelled,
+              onSettled: () => {
+                setIsReady(true);
+                complete();
+              },
+            });
           } catch (err) {
             fail(err instanceof Error ? err.message : String(err));
           }
@@ -320,13 +306,7 @@ export const ContinuousStageMap: React.FC<ContinuousStageMapProps> = ({
   return (
     <AbsoluteFill style={{ backgroundColor: colors.background }}>
       <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
-      <AbsoluteFill
-        style={{
-          pointerEvents: "none",
-          background:
-            "linear-gradient(90deg, rgba(5, 14, 28, 0.44) 0%, rgba(5, 14, 28, 0.22) 27%, rgba(5, 14, 28, 0) 62%)",
-        }}
-      />
+      <MapEdgeScrim />
       {activeMediaCue && activeMediaPoint && activeContext && (
         <WaypointMediaCallout
           cue={activeMediaCue}
